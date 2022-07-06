@@ -8,9 +8,9 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import tech.sledger.investments.model.PriceResponse;
-import tech.sledger.investments.model.SaxoAssetType;
-import tech.sledger.investments.model.SaxoSearchResults;
+import tech.sledger.investments.model.saxo.PriceResponse;
+import tech.sledger.investments.model.saxo.AssetType;
+import tech.sledger.investments.model.saxo.SearchResults;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,19 +33,19 @@ public class SaxoClient {
     }
 
     @Cacheable(value = "prices", unless = "#result==null")
-    public PriceResponse getPrices(SaxoAssetType assetType, List<Integer> identifiers) {
+    public PriceResponse getPrices(AssetType assetType, List<Integer> identifiers) {
         String idString = identifiers.stream().map(Object::toString).collect(Collectors.joining(","));
         return get("/trade/v1/infoprices/list/?FieldGroups=PriceInfo,PriceInfoDetails&AssetType=" + assetType + "&Uics=" + idString, PriceResponse.class);
     }
 
-    public SaxoSearchResults searchInstruments(String query) {
-        return get("/ref/v1/instruments/?AssetType=FxSpot&Keywords=" + query, SaxoSearchResults.class);
+    public SearchResults searchInstruments(String query) {
+        return get("/ref/v1/instruments/?AssetType=FxSpot&Keywords=" + query, SearchResults.class);
     }
 
     @Cacheable(value = "instruments", unless = "#result==null")
-    public SaxoSearchResults searchInstruments(List<Integer> identifiers) {
+    public SearchResults searchInstruments(List<Integer> identifiers) {
         String idString = identifiers.toString().replaceAll(" ", "");
-        return get("/ref/v1/instruments/?Uics=" + idString.substring(1, idString.length() - 1), SaxoSearchResults.class);
+        return get("/ref/v1/instruments/?Uics=" + idString.substring(1, idString.length() - 1), SearchResults.class);
     }
 
     @Retryable

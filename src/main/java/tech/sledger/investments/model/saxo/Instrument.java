@@ -1,8 +1,8 @@
-package tech.sledger.investments.model;
+package tech.sledger.investments.model.saxo;
 
 import java.util.List;
 
-public record SaxoInstrument(
+public record Instrument(
     String AssetType,
     String CurrencyCode,
     String Description,

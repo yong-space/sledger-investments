@@ -4,7 +4,7 @@ spring:
     main:
         banner-mode: off
         lazy-initialization: true
-    data.mongodb.uri: mongodb://mongodb/sledger
+    data.mongodb.uri: mongodb://mongodb/sledger-investments
 server.error.include-message: always
 logging.level:
     org.springframework:
