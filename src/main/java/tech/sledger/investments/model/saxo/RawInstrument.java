@@ -2,7 +2,7 @@ package tech.sledger.investments.model.saxo;
 
 import java.util.List;
 
-public record Instrument(
+public record RawInstrument(
     String AssetType,
     String CurrencyCode,
     String Description,

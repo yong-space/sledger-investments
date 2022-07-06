@@ -4,16 +4,18 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Data
 @Builder
-public class Instrument {
+public class Transaction {
     @Id
     private int id;
-    private String name;
-    private String symbol;
-    private String currency;
+    private Instant date;
+    private TransactionType type;
+    private BigDecimal amount;
     private BigDecimal price;
-    private BigDecimal change;
-    private BigDecimal changePercent;
+    private String ticker;
+    private Integer quantity;
+    private Integer instrumentId;
 }

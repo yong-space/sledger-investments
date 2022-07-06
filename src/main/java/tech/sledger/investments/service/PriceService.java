@@ -9,9 +9,10 @@ import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.client.SaxoClient;
 import tech.sledger.investments.model.*;
 import tech.sledger.investments.model.saxo.AssetType;
-import tech.sledger.investments.model.saxo.Instrument;
+import tech.sledger.investments.model.saxo.RawInstrument;
 import tech.sledger.investments.model.saxo.PriceEntry;
 import tech.sledger.investments.model.saxo.SearchResults;
+import tech.sledger.investments.repository.InstrumentRepo;
 import tech.sledger.investments.repository.PositionRepo;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 public class PriceService {
     private final SaxoClient saxoClient;
     private final PositionRepo positionRepo;
+    private final InstrumentRepo instrumentRepo;
 
     @GetMapping("/")
     public void home(HttpServletResponse response) throws IOException {
@@ -52,29 +54,13 @@ public class PriceService {
     }
 
     @GetMapping("/prices")
-    public List<tech.sledger.investments.model.Instrument> getPrices() {
-        List<Integer> instrumentIds = new ArrayList<>(positionRepo.findAll().stream().map(Position::getId).toList());
+    public List<Instrument> getPrices() {
+        List<Integer> instrumentIds = new ArrayList<>(positionRepo.findAll().stream().map(p -> p.getInstrument().getId()).toList());
         instrumentIds.add(45);
-        List<Instrument> rawInstruments = new ArrayList<>();
 
         AtomicInteger counter = new AtomicInteger();
-        var values = instrumentIds.stream()
-            .collect(groupingBy(x -> (counter.getAndIncrement()) / 50)).values();
-        for (var batch : values) {
-            try {
-                rawInstruments.addAll(saxoClient.searchInstruments(batch).Data());
-            } catch (Exception e) {
-                throw new ResponseStatusException(UNAUTHORIZED, "Unauthorised request");
-            }
-        }
-
-        Map<Integer, tech.sledger.investments.model.Instrument> instrumentMap = rawInstruments.stream()
-            .collect(Collectors.toMap(Instrument::Identifier, i -> tech.sledger.investments.model.Instrument.builder()
-                .identifier(i.Identifier())
-                .name(i.Description())
-                .symbol(i.Symbol())
-                .currency(i.CurrencyCode())
-                .build()));
+        Map<Integer, Instrument> instrumentMap = instrumentRepo.findAll().stream()
+            .collect(Collectors.toMap(Instrument::getId, i -> i));
 
         counter.set(0);
         List<PriceEntry> prices = new ArrayList<>();
@@ -83,24 +69,25 @@ public class PriceService {
             .forEach(batch -> prices.addAll(saxoClient.getPrices(AssetType.Stock, batch).getData()));
         prices.addAll(saxoClient.getPrices(AssetType.FxSpot, List.of(45)).getData());
 
-        return prices.stream()
+        List<Instrument> instruments = prices.stream()
             .map(e -> {
                 BigDecimal price = e.getPriceInfoDetails().getLastTraded();
                 price = price.compareTo(BigDecimal.ZERO) > 0 ? price : e.getQuote().getAsk();
-                tech.sledger.investments.model.Instrument instrument = instrumentMap.get(e.getIdentifier());
+                Instrument instrument = instrumentMap.get(e.getIdentifier());
                 instrument.setPrice(price);
                 instrument.setChange(e.getPriceInfo().getNetChange());
                 instrument.setChangePercent(e.getPriceInfo().getPercentChange());
                 return instrument;
-            })
-            .collect(Collectors.toList());
+            }).toList();
+        instrumentRepo.saveAll(instruments);
+        return instruments;
     }
 
     private BigDecimal calculateAmount(BigDecimal price, int quantity, BigDecimal fees, BigDecimal fx) {
         return price.multiply(BigDecimal.valueOf(quantity)).add(fees).multiply(fx);
     }
 
-    private PortfolioEntry buildPortfolioEntry(Position position, tech.sledger.investments.model.Instrument instrument, BigDecimal fx) {
+    private PortfolioEntry buildPortfolioEntry(Position position, Instrument instrument, BigDecimal fx) {
         BigDecimal buyAmount = calculateAmount(position.getBuyPrice(), position.getPosition(), position.getBuyFees(), position.getBuyFx());
         BigDecimal sellAmount = calculateAmount(instrument.getPrice(), position.getPosition(), position.getBuyFees(), fx);
         BigDecimal profit = sellAmount.subtract(buyAmount).add(position.getDividends().multiply(fx).setScale(2, RoundingMode.HALF_UP));
@@ -123,16 +110,17 @@ public class PriceService {
 
     @GetMapping("/portfolio")
     public List<PortfolioEntry> getPortfolio() {
-        Map<Integer, tech.sledger.investments.model.Instrument> prices = getPrices().stream()
-            .collect(Collectors.toMap(tech.sledger.investments.model.Instrument::getIdentifier, i -> i));
+        Map<Integer, Instrument> prices = getPrices().stream()
+            .collect(Collectors.toMap(Instrument::getId, i -> i));
 
         Map<String, BigDecimal> fxRates = Map.of(
             "SGD", BigDecimal.valueOf(1),
-            "USD", prices.get(45).getPrice()
+            "HKD", BigDecimal.valueOf(1),
+            "USD", BigDecimal.valueOf(1) // prices.get(45).getPrice()
         );
 
         return positionRepo.findAll().stream().map(p -> {
-            tech.sledger.investments.model.Instrument instrument = prices.get(p.getId());
+            Instrument instrument = prices.get(p.getInstrument().getId());
             BigDecimal fx = fxRates.get(instrument.getCurrency());
             return buildPortfolioEntry(p, instrument, fx);
         }).toList();

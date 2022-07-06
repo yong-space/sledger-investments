@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,12 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import tech.sledger.investments.client.SaxoClient;
+import tech.sledger.investments.model.Config;
+import tech.sledger.investments.repository.ConfigRepo;
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
 @Slf4j
+@Lazy(false)
 @RestController
 @RequiredArgsConstructor
 public class TokenService {
@@ -39,6 +45,18 @@ public class TokenService {
     private final SaxoClient saxoClient;
     private final ObjectMapper objectMapper;
     private final Timer timer = new Timer(true);
+    private final ConfigRepo configRepo;
+
+    @PostConstruct
+    public void init() {
+        configRepo.findById("accessToken").ifPresent(config -> {
+            saxoClient.setAccessToken(config.getValue());
+            log.debug("Reusing existing access token: {}", config.getValue());
+            String refreshToken = configRepo.findById("refreshToken").map(Config::getValue).orElse(null);
+            int nextRefresh = configRepo.findById("nextRefresh").map(c -> Integer.parseInt(c.getValue())).orElse(0);
+            scheduleRefreshToken(refreshToken, nextRefresh);
+        });
+    }
 
     @GetMapping("/authorize")
     public void authorize(HttpServletResponse response) throws IOException {
@@ -68,7 +86,7 @@ public class TokenService {
         return null;
     }
 
-    private void scheduleRefreshToken(String refreshToken, long interval) {
+    public void scheduleRefreshToken(String refreshToken, long interval) {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -108,6 +126,10 @@ public class TokenService {
             String refreshToken = responseNode.path("refresh_token").asText();
             log.debug("Scheduling refresh with token: {}", refreshToken);
             scheduleRefreshToken(refreshToken, nextRefresh);
+
+            configRepo.save(Config.builder().key("accessToken").value(accessToken).build());
+            configRepo.save(Config.builder().key("refreshToken").value(refreshToken).build());
+            configRepo.save(Config.builder().key("nextRefresh").value(nextRefresh + "").build());
         } catch (JsonProcessingException ignore) {}
     }
 }
