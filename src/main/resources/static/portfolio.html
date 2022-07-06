@@ -3,6 +3,14 @@
     <head>
         <title>Sledger Investments</title>
         <style>
+            table {
+                border-collapse: collapse;
+            }
+            table, th, td {
+                border: #555 1px solid;
+            }
+            th, td { padding: .5rem }
+            td.number { text-align: right }
         </style>
     </head>
     <body>
@@ -12,29 +20,38 @@
                 <tr>
                     <th>Symbol</th>
                     <th>Name</th>
-                    <th>Price</th>
                     <th>Position</th>
+                    <th>Price</th>
+                    <th>Dividends</th>
                     <th>Profit</th>
+                    <th>Profit %</th>
                 </tr>
             </thead>
             <tbody id="portfolio"></tbody>
         </table>
 
         <script>
-            const portfolioEntry = ({ symbol, name, price, position, profit }) => {
+            const format = (num, decimals = 2) => num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+            const portfolioEntry = ({ symbol, name, position, price, dividends, profit, profitPercentage }) => {
                 return `
                     <tr>
                         <td>${symbol}</td>
                         <td>${name}</td>
-                        <td>${price}</td>
-                        <td>${position}</td>
-                        <td>${profit}</td>
+                        <td class="number">${format(position, 0)}</td>
+                        <td class="number">${format(price, 3)}</td>
+                        <td class="number">${format(dividends)}</td>
+                        <td class="number">${format(profit)}</td>
+                        <td class="number">${format(profitPercentage)}</td>
                     </tr>
                 `;
             };
             fetch('/portfolio')
                 .then(response => response.json())
-                .then(data => document.querySelector("#portfolio").innerHTML = data.map(entry => portfolioEntry(entry)).join(""));
+                .then(data => {
+                    const totalProfit = format(data.map(i => i.profit).reduce((a, b) => a += b));
+                    document.querySelector("#portfolio").innerHTML = data.map(entry => portfolioEntry(entry)).join("") +
+                        `<tr><td colspan="5"></td><td class="number">${totalProfit}</td></tr>`;
+                });
         </script>
     </body>
 </html>

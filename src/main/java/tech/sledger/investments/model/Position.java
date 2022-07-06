@@ -1,3 +1,13 @@
 package tech.sledger.investments.model;
 
-public record Position(int id, int position, float buyPrice, float buyFees, float buyFx) {}
+import org.springframework.data.annotation.Id;
+import java.math.BigDecimal;
+
+public record Position(
+    @Id int id,
+    int position,
+    BigDecimal buyPrice,
+    BigDecimal buyFees,
+    BigDecimal buyFx,
+    BigDecimal dividends
+) {}

@@ -2,13 +2,14 @@ package tech.sledger.investments.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Data
 public class PriceQuote {
     @JsonProperty("Ask")
-    private float ask;
+    private BigDecimal ask;
     @JsonProperty("Bid")
-    private float bid;
+    private BigDecimal bid;
     @JsonProperty("Mid")
-    private float mid;
+    private BigDecimal mid;
 }

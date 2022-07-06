@@ -2,15 +2,16 @@ package tech.sledger.investments.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.investments.client.SaxoClient;
 import tech.sledger.investments.model.*;
+import tech.sledger.investments.repository.PositionRepo;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,17 +19,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
-@Lazy(false)
 @RestController
 @RequiredArgsConstructor
 public class PriceService {
     private final SaxoClient saxoClient;
-    private final List<Position> positions = List.of(
-        new Position(38442, 200_000, 0.16f, 69.35f, 1),     // Lippo
-        new Position(1800003, 32_000, 0.635f, 28.94f, 1),   // IREIT
-        new Position(8301033, 10_000, 1, 9, 1.35f),         // KepPacOak
-        new Position(8090883, 20, 290.005f, 2.28f, 1.3581f) // SEA
-    );
+    private final PositionRepo positionRepo;
 
     @GetMapping("/")
     public void home(HttpServletResponse response) throws IOException {
@@ -50,7 +45,7 @@ public class PriceService {
 
     @GetMapping("/prices")
     public List<Instrument> getPrices() {
-        List<Integer> instrumentIds = new ArrayList<>(positions.stream().map(Position::id).toList());
+        List<Integer> instrumentIds = new ArrayList<>(positionRepo.findAll().stream().map(Position::id).toList());
         instrumentIds.add(45);
         List<SaxoInstrument> rawInstruments = saxoClient.searchInstruments(instrumentIds).Data();
         Map<Integer, Instrument> instrumentMap = rawInstruments.stream()
@@ -73,8 +68,8 @@ public class PriceService {
             .collect(Collectors.toList());
     }
 
-    private float calculateAmount(float price, float quantity, float fees, float fx) {
-        return ((price * quantity) + fees) * fx;
+    private BigDecimal calculateAmount(BigDecimal price, int quantity, BigDecimal fees, BigDecimal fx) {
+        return price.multiply(BigDecimal.valueOf(quantity)).add(fees).multiply(fx);
     }
 
     @GetMapping("/portfolio")
@@ -82,23 +77,26 @@ public class PriceService {
         Map<Integer, Instrument> prices = getPrices().stream()
             .collect(Collectors.toMap(Instrument::getIdentifier, i -> i));
 
-        Map<String, Float> fxRates = Map.of(
-            "SGD", 1f,
+        Map<String, BigDecimal> fxRates = Map.of(
+            "SGD", BigDecimal.valueOf(1),
             "USD", prices.get(45).getPrice()
         );
 
-        return positions.stream().map(p -> {
+        return positionRepo.findAll().stream().map(p -> {
             Instrument i = prices.get(p.id());
-            float buyAmount = calculateAmount(p.buyPrice(), p.position(), p.buyFees(), p.buyFx());
-            float sellAmount = calculateAmount(i.getPrice(), p.position(), p.buyFees(), fxRates.get(i.getCurrency()));
-            float profit = sellAmount - buyAmount;
+            BigDecimal buyAmount = calculateAmount(p.buyPrice(), p.position(), p.buyFees(), p.buyFx());
+            BigDecimal sellAmount = calculateAmount(i.getPrice(), p.position(), p.buyFees(), fxRates.get(i.getCurrency()));
+            BigDecimal profit = sellAmount.subtract(buyAmount).add(p.dividends().multiply(fxRates.get(i.getCurrency()))).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal profitPercentage = profit.multiply(BigDecimal.valueOf(100)).divide(buyAmount, 2, RoundingMode.HALF_UP);
 
             return new PortfolioEntry(
                 i.getSymbol(),
                 i.getName(),
-                i.getPrice(),
                 p.position(),
-                profit
+                i.getPrice(),
+                p.dividends().setScale(2, RoundingMode.HALF_UP),
+                profit,
+                profitPercentage
             );
         }).toList();
     }

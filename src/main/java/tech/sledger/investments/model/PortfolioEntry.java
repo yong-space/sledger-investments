@@ -1,9 +1,13 @@
 package tech.sledger.investments.model;
 
+import java.math.BigDecimal;
+
 public record PortfolioEntry(
     String symbol,
     String name,
-    float price,
     int position,
-    float profit
+    BigDecimal price,
+    BigDecimal dividends,
+    BigDecimal profit,
+    BigDecimal profitPercentage
 ) {}
