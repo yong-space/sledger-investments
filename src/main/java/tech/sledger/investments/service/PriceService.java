@@ -15,8 +15,10 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @RestController
@@ -47,7 +49,13 @@ public class PriceService {
     public List<Instrument> getPrices() {
         List<Integer> instrumentIds = new ArrayList<>(positionRepo.findAll().stream().map(Position::getId).toList());
         instrumentIds.add(45);
-        List<SaxoInstrument> rawInstruments = saxoClient.searchInstruments(instrumentIds).Data();
+        List<SaxoInstrument> rawInstruments = new ArrayList<>();
+
+        AtomicInteger counter = new AtomicInteger();
+        instrumentIds.stream().collect(groupingBy(x -> (counter.getAndIncrement()) / 50))
+            .values()
+            .forEach(batch -> rawInstruments.addAll(saxoClient.searchInstruments(batch).Data()));
+
         Map<Integer, Instrument> instrumentMap = rawInstruments.stream()
             .collect(Collectors.toMap(SaxoInstrument::Identifier, i -> Instrument.builder()
                 .identifier(i.Identifier())
@@ -56,7 +64,11 @@ public class PriceService {
                 .currency(i.CurrencyCode())
                 .build()));
 
-        List<PriceEntry> prices = new ArrayList<>(saxoClient.getPrices(SaxoAssetType.Stock, instrumentIds).getData());
+        counter.set(0);
+        List<PriceEntry> prices = new ArrayList<>();
+        instrumentIds.stream().collect(groupingBy(x -> (counter.getAndIncrement()) / 50))
+            .values()
+            .forEach(batch -> prices.addAll(saxoClient.getPrices(SaxoAssetType.Stock, batch).getData()));
         prices.addAll(saxoClient.getPrices(SaxoAssetType.FxSpot, List.of(45)).getData());
 
         return prices.stream()
