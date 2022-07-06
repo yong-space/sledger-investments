@@ -3,18 +3,19 @@
     <head>
         <title>Sledger Investments</title>
         <style>
-            table {
-                border-collapse: collapse;
-            }
+            * { font-family: "JetBrains Mono", serif }
+            table { border-collapse: collapse }
+            h1 { font-size: 1.5rem }
             table, th, td {
                 border: #555 1px solid;
+                font-size: .8rem;
             }
             th, td { padding: .5rem }
             td.number { text-align: right }
         </style>
     </head>
     <body>
-        <h1>Portfolio</h1>
+        <h1>SGX Portfolio</h1>
         <table>
             <thead>
                 <tr>
@@ -27,7 +28,23 @@
                     <th>Profit %</th>
                 </tr>
             </thead>
-            <tbody id="portfolio"></tbody>
+            <tbody id="sgx-portfolio"></tbody>
+        </table>
+
+        <h1>US Portfolio</h1>
+        <table>
+            <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Price</th>
+                <th>Dividends</th>
+                <th>Profit</th>
+                <th>Profit %</th>
+            </tr>
+            </thead>
+            <tbody id="us-portfolio"></tbody>
         </table>
 
         <script>
@@ -48,9 +65,17 @@
             fetch('/portfolio')
                 .then(response => response.json())
                 .then(data => {
-                    const totalProfit = format(data.map(i => i.profit).reduce((a, b) => a += b));
-                    document.querySelector("#portfolio").innerHTML = data.map(entry => portfolioEntry(entry)).join("") +
-                        `<tr><td colspan="5"></td><td class="number">${totalProfit}</td></tr>`;
+                    const sgxData = data.filter(i => i.symbol.endsWith(':xses'));
+                    sgxData.sort((a, b) => a.profitPercentage < b.profitPercentage ? 1 : -1);
+                    const sgxProfit = format(sgxData.map(i => i.profit).reduce((a, b) => a += b));
+                    document.querySelector("#sgx-portfolio").innerHTML = sgxData.map(entry => portfolioEntry(entry)).join("") +
+                        `<tr><td colspan="5"></td><td class="number">${sgxProfit}</td></tr>`;
+
+                    const usData = data.filter(i => !i.symbol.endsWith(':xses'));
+                    usData.sort((a, b) => a.profitPercentage < b.profitPercentage ? 1 : -1);
+                    const usProfit = format(usData.map(i => i.profit).reduce((a, b) => a += b));
+                    document.querySelector("#us-portfolio").innerHTML = usData.map(entry => portfolioEntry(entry)).join("") +
+                        `<tr><td colspan="5"></td><td class="number">${usProfit}</td></tr>`;
                 });
         </script>
     </body>

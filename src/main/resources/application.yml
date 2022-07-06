@@ -7,8 +7,12 @@ spring:
     data.mongodb.uri: mongodb://mongodb/sledger
 server.error.include-message: always
 logging.level:
-    org.springframework.boot: ERROR
+    org.springframework:
+        boot: ERROR
+        data: ERROR
+        context: ERROR
     org.apache: ERROR
+    org.mongodb: ERROR
 saxo-dev:
     uri: https://gateway.saxobank.com/sim/openapi
     auth-uri: https://sim.logonvalidation.net

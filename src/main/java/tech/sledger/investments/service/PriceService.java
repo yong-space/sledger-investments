@@ -62,7 +62,7 @@ public class PriceService {
         return prices.stream()
             .map(e -> {
                 Instrument instrument = instrumentMap.get(e.getIdentifier());
-                instrument.setPrice(e.getQuote().getMid());
+                instrument.setPrice(e.getQuote().getBid());
                 return instrument;
             })
             .collect(Collectors.toList());
