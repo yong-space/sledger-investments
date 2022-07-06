@@ -53,8 +53,9 @@ public class TokenService {
     public String token(
         @RequestParam String code,
         @RequestParam(required=false) String error,
-        @RequestParam(required=false, name="error_description") String errorDescription
-    ) {
+        @RequestParam(required=false, name="error_description") String errorDescription,
+        HttpServletResponse response
+    ) throws IOException {
         if (error != null) {
             return error + ": " + errorDescription;
         }
@@ -65,7 +66,9 @@ public class TokenService {
         data.add("client_id", saxoClientId);
         data.add("client_secret", saxoClientSecret);
         String accessToken = getNewToken(data);
-        return "Hello " + accessToken;
+        log.info("Obtained new access token: {}", accessToken);
+        response.sendRedirect("/");
+        return null;
     }
 
     private String getNewToken(MultiValueMap<String, String> data) {
@@ -86,7 +89,7 @@ public class TokenService {
             return null;
         }
 
-        if (!saxoClient.isInit()) {
+        if (saxoClient.isNotAuthenticated()) {
             int nextRefresh = responseNode.path("expires_in").asInt() * 1000 - 1000;
             String refreshToken = responseNode.path("refresh_token").asText();
             scheduleRefreshToken(refreshToken, nextRefresh);

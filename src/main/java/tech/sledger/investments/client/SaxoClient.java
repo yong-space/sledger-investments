@@ -1,7 +1,7 @@
 package tech.sledger.investments.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -22,8 +22,8 @@ public class SaxoClient {
     private HttpHeaders headers = null;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public boolean isInit() {
-        return headers != null;
+    public boolean isNotAuthenticated() {
+        return headers == null;
     }
 
     public void setAccessToken(String accessToken) {
@@ -32,6 +32,7 @@ public class SaxoClient {
         headers.add("Authorization", "Bearer " + accessToken);
     }
 
+    @Cacheable("prices")
     public PriceResponse getPrices(SaxoAssetType assetType, List<Integer> identifiers) {
         String idString = identifiers.stream().map(Object::toString).collect(Collectors.joining(","));
         return get("/trade/v1/infoprices/list/?AssetType=" + assetType + "&Uics=" + idString, PriceResponse.class);
@@ -41,6 +42,7 @@ public class SaxoClient {
         return get("/ref/v1/instruments/?AssetType=FxSpot&Keywords=" + query, SaxoSearchResults.class);
     }
 
+    @Cacheable("instruments")
     public SaxoSearchResults searchInstruments(List<Integer> identifiers) {
         String idString = identifiers.toString().replaceAll(" ", "");
         return get("/ref/v1/instruments/?Uics=" + idString.substring(1, idString.length() - 1), SaxoSearchResults.class);

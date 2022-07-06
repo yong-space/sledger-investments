@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Sledger Investments</title>
+        <style>
+        </style>
+    </head>
+    <body>
+        <h1>Portfolio</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Position</th>
+                    <th>Profit</th>
+                </tr>
+            </thead>
+            <tbody id="portfolio"></tbody>
+        </table>
+
+        <script>
+            const portfolioEntry = ({ symbol, name, price, position, profit }) => {
+                return `
+                    <tr>
+                        <td>${symbol}</td>
+                        <td>${name}</td>
+                        <td>${price}</td>
+                        <td>${position}</td>
+                        <td>${profit}</td>
+                    </tr>
+                `;
+            };
+            fetch('/portfolio')
+                .then(response => response.json())
+                .then(data => document.querySelector("#portfolio").innerHTML = data.map(entry => portfolioEntry(entry)).join(""));
+        </script>
+    </body>
+</html>

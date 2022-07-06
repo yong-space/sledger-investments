@@ -1,3 +1,3 @@
 package tech.sledger.investments.model;
 
-public record Position(int id, int position) {}
+public record Position(int id, int position, float buyPrice, float buyFees, float buyFx) {}
