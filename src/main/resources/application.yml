@@ -13,15 +13,9 @@ logging.level:
         context: ERROR
     org.apache: ERROR
     org.mongodb: ERROR
-saxo-dev:
+saxo:
     uri: https://gateway.saxobank.com/sim/openapi
     auth-uri: https://sim.logonvalidation.net
-    app-key: 5fd95e1e1a7f4edbb609921a5a546bf9
-    app-secret: d154e1cc899046b7b4a281680baba97a
-    redirect-uri: http://localhost:8080/token
-saxo:
-    uri: https://gateway.saxobank.com/openapi
-    auth-uri: https://live.logonvalidation.net
-    app-key: 662730c663df4334b348415194d13832
-    app-secret: e077ff255572408fbce16c3b58610a01
+    app-key: x
+    app-secret: x
     redirect-uri: http://localhost:8080/token
