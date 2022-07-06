@@ -12,86 +12,87 @@
             }
             th, td { padding: .5rem }
             td.number { text-align: right }
+            .green { color: mediumseagreen }
+            .red { color: darkred }
+            .select { cursor: pointer }
         </style>
     </head>
     <body>
         <h1>SGX Portfolio</h1>
         <table>
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Name</th>
-                    <th>Position</th>
-                    <th>Price</th>
-                    <th>Dividends</th>
-                    <th>Today P&L</th>
-                    <th>Today %</th>
-                    <th>P&L</th>
-                    <th>P&L %</th>
-                </tr>
-            </thead>
+            <tr class="headers"></tr>
             <tbody id="sgx-portfolio"></tbody>
         </table>
 
         <h1>US Portfolio</h1>
         <table>
-            <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Name</th>
-                <th>Position</th>
-                <th>Price</th>
-                <th>Dividends</th>
-                <th>Today P&L</th>
-                <th>Today %</th>
-                <th>P&L</th>
-                <th>P&L %</th>
-            </tr>
-            </thead>
+            <tr class="headers"></tr>
             <tbody id="us-portfolio"></tbody>
         </table>
 
         <script>
             const format = (num, decimals = 2) => num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-            const portfolioEntry = ({ symbol, name, position, price, amount, dividends, changeToday, changeTodayPercentage, profit, profitPercentage }) => {
-                return `
-                    <tr>
-                        <td>${symbol}</td>
-                        <td>${name}</td>
-                        <td class="number">${format(position, 0)}</td>
-                        <td class="number">${format(price, 3)}</td>
-                        <td class="number">${format(dividends)}</td>
-                        <td class="number">${format(changeToday)}</td>
-                        <td class="number">${format(changeTodayPercentage, 1)}</td>
-                        <td class="number">${format(profit)}</td>
-                        <td class="number">${format(profitPercentage, 1)}</td>
-                    </tr>
-                `;
+            const formatColour = (num, decimals = 2) => `<span class="${num > 0 ? 'green' : num < 0 ? 'red' : ''}">${format(num, decimals)}</span>`;
+            const portfolioEntry = ({ symbol, name, position, price, dividends, changeToday, changeTodayPercentage, profit, profitPercentage }) => `
+                <tr>
+                    <td>${symbol}</td>
+                    <td>${name}</td>
+                    <td class="number">${format(position, 0)}</td>
+                    <td class="number">${format(price, 3)}</td>
+                    <td class="number">${formatColour(dividends)}</td>
+                    <td class="number">${formatColour(changeToday)}</td>
+                    <td class="number">${formatColour(changeTodayPercentage, 1)}</td>
+                    <td class="number">${formatColour(profit)}</td>
+                    <td class="number">${formatColour(profitPercentage, 1)}</td>
+                </tr>
+            `;
+
+            const formatRows = (data, sortField) => {
+                data.sort((a, b) => a[sortField] > b[sortField] ? 1 : -1);
+                const amount = data.map(i => i.amount).reduce((a, b) => a += b);
+                const profitToday = data.map(i => i.changeToday).reduce((a, b) => a += b);
+                const profitTodayPercent = profitToday * 100 / amount;
+                const profit = data.map(i => i.profit).reduce((a, b) => a += b);
+                const profitPercent = profit * 100 / amount;
+
+                return data.map(entry => portfolioEntry(entry)).join("") +
+                    `<tr>
+                        <td colspan="5"></td>
+                        <td class="number">${formatColour(profitToday)}</td>
+                        <td class="number">${formatColour(profitTodayPercent, 1)}</td>
+                        <td class="number">${formatColour(profit)}</td>
+                        <td class="number">${formatColour(profitPercent, 1)}</td>
+                    </tr>`;
             };
+
+            let storedData;
+
+            const formatData = (sortField) => {
+                const sgxData = storedData.filter(i => i.symbol.endsWith(':xses'));
+                document.querySelector("#sgx-portfolio").innerHTML = formatRows(sgxData, sortField);
+
+                const usData = storedData.filter(i => !i.symbol.endsWith(':xses'));
+                document.querySelector("#us-portfolio").innerHTML = formatRows(usData, sortField);
+            };
+
+            const headers = () => `
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Price</th>
+                <th class="select" onClick="formatData('dividends')">Dividends</th>
+                <th class="select" onClick="formatData('changeToday')">Today P&L</th>
+                <th class="select" onClick="formatData('changeTodayPercentage')">Today %</th>
+                <th class="select" onClick="formatData('profit')">P&L</th>
+                <th class="select" onClick="formatData('profitPercentage')">P&L %</th>
+            `;
+
             fetch('/portfolio')
                 .then(response => response.json())
                 .then(data => {
-                    const sgxData = data.filter(i => i.symbol.endsWith(':xses'));
-                    sgxData.sort((a, b) => a.changeTodayPercentage < b.changeTodayPercentage ? 1 : -1);
-                    const sgxAmount = sgxData.map(i => i.amount).reduce((a, b) => a += b);
-                    const sgxProfitToday = format(sgxData.map(i => i.changeToday).reduce((a, b) => a += b));
-                    const sgxProfitTodayPercent = format(parseFloat(sgxProfitToday) * 100 / sgxAmount, 1);
-                    const sgxProfit = format(sgxData.map(i => i.profit).reduce((a, b) => a += b));
-                    const sgxProfitPercent = format(parseFloat(sgxProfit) * 100 / sgxAmount, 1);
-
-                    document.querySelector("#sgx-portfolio").innerHTML = sgxData.map(entry => portfolioEntry(entry)).join("") +
-                        `<tr><td colspan="5"></td><td class="number">${sgxProfitToday}</td><td class="number">${sgxProfitTodayPercent}</td><td class="number">${sgxProfit}</td><td class="number">${sgxProfitPercent}</td></tr>`;
-
-                    const usData = data.filter(i => !i.symbol.endsWith(':xses'));
-                    usData.sort((a, b) => a.changeTodayPercentage < b.changeTodayPercentage ? 1 : -1);
-                    const usAmount = usData.map(i => i.amount).reduce((a, b) => a += b);
-                    const usProfitToday = format(usData.map(i => i.changeToday).reduce((a, b) => a += b));
-                    const usProfitTodayPercent = format(parseFloat(usProfitToday) * 100 / usAmount, 1);
-                    const usProfit = format(usData.map(i => i.profit).reduce((a, b) => a += b));
-                    const usProfitPercent = format(parseFloat(usProfit) * 100 / usAmount, 1);
-
-                    document.querySelector("#us-portfolio").innerHTML = usData.map(entry => portfolioEntry(entry)).join("") +
-                        `<tr><td colspan="5"></td><td class="number">${usProfitToday}</td><td class="number">${usProfitTodayPercent}</td><td class="number">${usProfit}</td><td class="number">${usProfitPercent}</td></tr>`;
+                    document.querySelectorAll('.headers').forEach(h => h.innerHTML = headers());
+                    storedData = data;
+                    formatData('changeTodayPercentage');
                 });
         </script>
     </body>
