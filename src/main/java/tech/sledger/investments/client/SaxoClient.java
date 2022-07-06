@@ -35,7 +35,7 @@ public class SaxoClient {
     @Cacheable(value = "prices", unless = "#result==null")
     public PriceResponse getPrices(SaxoAssetType assetType, List<Integer> identifiers) {
         String idString = identifiers.stream().map(Object::toString).collect(Collectors.joining(","));
-        return get("/trade/v1/infoprices/list/?AssetType=" + assetType + "&Uics=" + idString, PriceResponse.class);
+        return get("/trade/v1/infoprices/list/?FieldGroups=PriceInfo,PriceInfoDetails&AssetType=" + assetType + "&Uics=" + idString, PriceResponse.class);
     }
 
     public SaxoSearchResults searchInstruments(String query) {

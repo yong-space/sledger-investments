@@ -24,8 +24,10 @@
                     <th>Position</th>
                     <th>Price</th>
                     <th>Dividends</th>
-                    <th>Profit</th>
-                    <th>Profit %</th>
+                    <th>Today P&L</th>
+                    <th>Today %</th>
+                    <th>P&L</th>
+                    <th>P&L %</th>
                 </tr>
             </thead>
             <tbody id="sgx-portfolio"></tbody>
@@ -40,8 +42,10 @@
                 <th>Position</th>
                 <th>Price</th>
                 <th>Dividends</th>
-                <th>Profit</th>
-                <th>Profit %</th>
+                <th>Today P&L</th>
+                <th>Today %</th>
+                <th>P&L</th>
+                <th>P&L %</th>
             </tr>
             </thead>
             <tbody id="us-portfolio"></tbody>
@@ -49,7 +53,7 @@
 
         <script>
             const format = (num, decimals = 2) => num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-            const portfolioEntry = ({ symbol, name, position, price, dividends, profit, profitPercentage }) => {
+            const portfolioEntry = ({ symbol, name, position, price, amount, dividends, changeToday, changeTodayPercentage, profit, profitPercentage }) => {
                 return `
                     <tr>
                         <td>${symbol}</td>
@@ -57,8 +61,10 @@
                         <td class="number">${format(position, 0)}</td>
                         <td class="number">${format(price, 3)}</td>
                         <td class="number">${format(dividends)}</td>
+                        <td class="number">${format(changeToday)}</td>
+                        <td class="number">${format(changeTodayPercentage, 1)}</td>
                         <td class="number">${format(profit)}</td>
-                        <td class="number">${format(profitPercentage)}</td>
+                        <td class="number">${format(profitPercentage, 1)}</td>
                     </tr>
                 `;
             };
@@ -66,16 +72,26 @@
                 .then(response => response.json())
                 .then(data => {
                     const sgxData = data.filter(i => i.symbol.endsWith(':xses'));
-                    sgxData.sort((a, b) => a.profitPercentage < b.profitPercentage ? 1 : -1);
+                    sgxData.sort((a, b) => a.changeTodayPercentage < b.changeTodayPercentage ? 1 : -1);
+                    const sgxAmount = sgxData.map(i => i.amount).reduce((a, b) => a += b);
+                    const sgxProfitToday = format(sgxData.map(i => i.changeToday).reduce((a, b) => a += b));
+                    const sgxProfitTodayPercent = format(parseFloat(sgxProfitToday) * 100 / sgxAmount, 1);
                     const sgxProfit = format(sgxData.map(i => i.profit).reduce((a, b) => a += b));
+                    const sgxProfitPercent = format(parseFloat(sgxProfit) * 100 / sgxAmount, 1);
+
                     document.querySelector("#sgx-portfolio").innerHTML = sgxData.map(entry => portfolioEntry(entry)).join("") +
-                        `<tr><td colspan="5"></td><td class="number">${sgxProfit}</td></tr>`;
+                        `<tr><td colspan="5"></td><td class="number">${sgxProfitToday}</td><td class="number">${sgxProfitTodayPercent}</td><td class="number">${sgxProfit}</td><td class="number">${sgxProfitPercent}</td></tr>`;
 
                     const usData = data.filter(i => !i.symbol.endsWith(':xses'));
-                    usData.sort((a, b) => a.profitPercentage < b.profitPercentage ? 1 : -1);
+                    usData.sort((a, b) => a.changeTodayPercentage < b.changeTodayPercentage ? 1 : -1);
+                    const usAmount = usData.map(i => i.amount).reduce((a, b) => a += b);
+                    const usProfitToday = format(usData.map(i => i.changeToday).reduce((a, b) => a += b));
+                    const usProfitTodayPercent = format(parseFloat(usProfitToday) * 100 / usAmount, 1);
                     const usProfit = format(usData.map(i => i.profit).reduce((a, b) => a += b));
+                    const usProfitPercent = format(parseFloat(usProfit) * 100 / usAmount, 1);
+
                     document.querySelector("#us-portfolio").innerHTML = usData.map(entry => portfolioEntry(entry)).join("") +
-                        `<tr><td colspan="5"></td><td class="number">${usProfit}</td></tr>`;
+                        `<tr><td colspan="5"></td><td class="number">${usProfitToday}</td><td class="number">${usProfitTodayPercent}</td><td class="number">${usProfit}</td><td class="number">${usProfitPercent}</td></tr>`;
                 });
         </script>
     </body>

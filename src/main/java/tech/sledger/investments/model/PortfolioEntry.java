@@ -1,13 +1,20 @@
 package tech.sledger.investments.model;
 
+import lombok.Builder;
+import lombok.Data;
 import java.math.BigDecimal;
 
-public record PortfolioEntry(
-    String symbol,
-    String name,
-    int position,
-    BigDecimal price,
-    BigDecimal dividends,
-    BigDecimal profit,
-    BigDecimal profitPercentage
-) {}
+@Data
+@Builder
+public class PortfolioEntry {
+    private String symbol;
+    private String name;
+    private int position;
+    private BigDecimal amount;
+    private BigDecimal price;
+    private BigDecimal dividends;
+    private BigDecimal changeToday;
+    private BigDecimal changeTodayPercentage;
+    private BigDecimal profit;
+    private BigDecimal profitPercentage;
+}

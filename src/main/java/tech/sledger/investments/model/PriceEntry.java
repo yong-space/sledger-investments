@@ -8,8 +8,12 @@ import java.time.Instant;
 public class PriceEntry {
     @JsonProperty("LastUpdated")
     private Instant lastUpdated;
-    @JsonProperty("Quote")
-    private PriceQuote quote;
     @JsonProperty("Uic")
     private int identifier;
+    @JsonProperty("Quote")
+    private PriceQuote quote;
+    @JsonProperty("PriceInfo")
+    private PriceInfo priceInfo;
+    @JsonProperty("PriceInfoDetails")
+    private PriceInfoDetails priceInfoDetails;
 }

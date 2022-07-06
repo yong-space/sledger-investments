@@ -12,4 +12,6 @@ public class Instrument {
     private String currency;
     private int identifier;
     private BigDecimal price;
+    private BigDecimal change;
+    private BigDecimal changePercent;
 }
