@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.client.SaxoClient;
 import tech.sledger.investments.model.*;
 import tech.sledger.investments.repository.PositionRepo;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Slf4j
 @RestController
@@ -52,9 +54,15 @@ public class PriceService {
         List<SaxoInstrument> rawInstruments = new ArrayList<>();
 
         AtomicInteger counter = new AtomicInteger();
-        instrumentIds.stream().collect(groupingBy(x -> (counter.getAndIncrement()) / 50))
-            .values()
-            .forEach(batch -> rawInstruments.addAll(saxoClient.searchInstruments(batch).Data()));
+        var values = instrumentIds.stream()
+            .collect(groupingBy(x -> (counter.getAndIncrement()) / 50)).values();
+        for (var batch : values) {
+            try {
+                rawInstruments.addAll(saxoClient.searchInstruments(batch).Data());
+            } catch (Exception e) {
+                throw new ResponseStatusException(UNAUTHORIZED, "Unauthorised request");
+            }
+        }
 
         Map<Integer, Instrument> instrumentMap = rawInstruments.stream()
             .collect(Collectors.toMap(SaxoInstrument::Identifier, i -> Instrument.builder()

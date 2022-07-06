@@ -88,7 +88,12 @@
             `;
 
             fetch('/portfolio')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        document.location = '/authorize';
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     document.querySelectorAll('.headers').forEach(h => h.innerHTML = headers());
                     storedData = data;

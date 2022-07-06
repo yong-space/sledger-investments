@@ -10,6 +10,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.support.BasicAuthenticationInterceptor;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -79,6 +80,7 @@ public class TokenService {
         }, interval);
     }
 
+    @Retryable
     private void getNewToken(MultiValueMap<String, String> data) {
         data.add("redirect_uri", saxoRedirectUri);
         data.add("client_id", saxoClientId);
