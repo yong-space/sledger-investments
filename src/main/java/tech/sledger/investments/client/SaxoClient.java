@@ -9,7 +9,6 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import tech.sledger.investments.model.PriceResponse;
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,16 +16,11 @@ import java.util.stream.Collectors;
 public class SaxoClient {
     @Value("${saxo.uri}")
     private String saxoUri;
-    @Value("${saxo.token}")
-    private String saxoToken;
-    private HttpHeaders headers;
+    private HttpHeaders headers = null;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @PostConstruct
-    public void init() {
-        headers = new HttpHeaders();
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        headers.add("Authorization", "Bearer " + saxoToken);
+    public boolean isInit() {
+        return headers != null;
     }
 
     public void setAccessToken(String accessToken) {
@@ -46,7 +40,7 @@ public class SaxoClient {
 
     @Retryable
     private <T> T get(String uri, Class<T> responseType) {
-        if (headers.get("Authorization") == null) {
+        if (headers == null) {
             return null;
         }
         HttpEntity<Object> request = new HttpEntity<>(headers);
