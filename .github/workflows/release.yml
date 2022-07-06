@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: 17
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    - name: Build with Gradle
+      run: ./gradlew build
+    - name: Derive tag from gradle version
+      id: tag
+      run: |
+        export GRADLE_VERSION=`sed -n "s/version = '\([0-9.]\+\)'/\1/p" build.gradle`
+        export TIMESTAMP=`date +'%Y%m%d%H%M'`
+        export IMAGE_TAG=$GRADLE_VERSION-$TIMESTAMP
+        echo "IMAGE_NAME=${{ SECRETS.DOCKER_REGISTRY }}/${{ SECRETS.DEPLOYMENT_NAME }}:$IMAGE_TAG" >> $GITHUB_ENV
+        echo "::set-output name=tag::$IMAGE_TAG"
+    - uses: docker/setup-buildx-action@v1
+    - uses: docker/login-action@v1
+      with:
+        registry: ${{ secrets.DOCKER_REGISTRY }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - uses: docker/setup-qemu-action@v1
+    - uses: docker/build-push-action@v2
+      with:
+        context: .
+        platforms: linux/arm64
+        push: true
+        tags: ${{ env.IMAGE_NAME }}
+
+  release:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Perform rolling update
+        run: |
+          export IMAGE_NAME_INT=${{ SECRETS.DOCKER_REGISTRY_INT }}/${{ SECRETS.DEPLOYMENT_NAME }}:${{ needs.build.outputs.tag }}
+          kubectl set image deployments/${{ SECRETS.DEPLOYMENT_NAME }} ${{ SECRETS.DEPLOYMENT_NAME }}=$IMAGE_NAME_INT
+          kubectl rollout status deployment/${{ SECRETS.DEPLOYMENT_NAME }}
