@@ -37,7 +37,7 @@ public class TokenService {
     private String saxoRedirectUri;
     private final SaxoClient saxoClient;
     private final ObjectMapper objectMapper;
-    private Timer timer = new Timer(true);
+    private final Timer timer = new Timer(true);
 
     @GetMapping("/authorize")
     public void authorize(HttpServletResponse response) throws IOException {
@@ -62,42 +62,9 @@ public class TokenService {
         MultiValueMap<String, String> data = new LinkedMultiValueMap<>();
         data.add("grant_type", "authorization_code");
         data.add("code", code);
-        data.add("redirect_uri", saxoRedirectUri);
-        data.add("client_id", saxoClientId);
-        data.add("client_secret", saxoClientSecret);
         getNewToken(data);
         response.sendRedirect("/");
         return null;
-    }
-
-    private String getNewToken(MultiValueMap<String, String> data) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getInterceptors().add(new BasicAuthenticationInterceptor(saxoClientId, saxoClientSecret));
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        String response;
-        try {
-            response = restTemplate.postForObject(saxoAuthUri + "/token", new HttpEntity<>(data, headers), String.class);
-        } catch (RestClientException e) {
-            return "Error: " + e.getMessage();
-        }
-        JsonNode responseNode;
-        try {
-            responseNode = objectMapper.readTree(response);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-
-        if (saxoClient.isNotAuthenticated()) {
-            int nextRefresh = responseNode.path("expires_in").asInt() * 1000 - 1000;
-            String refreshToken = responseNode.path("refresh_token").asText();
-            scheduleRefreshToken(refreshToken, nextRefresh);
-        }
-
-        String accessToken = responseNode.path("access_token").asText();
-        saxoClient.setAccessToken(accessToken);
-        log.info("Obtained new access token: {}", accessToken);
-        return accessToken;
     }
 
     private void scheduleRefreshToken(String refreshToken, long interval) {
@@ -107,9 +74,38 @@ public class TokenService {
                 MultiValueMap<String, String> data = new LinkedMultiValueMap<>();
                 data.add("grant_type", "refresh_token");
                 data.add("refresh_token", refreshToken);
-                data.add("redirect_uri", saxoRedirectUri);
                 getNewToken(data);
             }
-        }, interval, interval);
+        }, interval);
+    }
+
+    private void getNewToken(MultiValueMap<String, String> data) {
+        data.add("redirect_uri", saxoRedirectUri);
+        data.add("client_id", saxoClientId);
+        data.add("client_secret", saxoClientSecret);
+
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getInterceptors().add(new BasicAuthenticationInterceptor(saxoClientId, saxoClientSecret));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        String response;
+        try {
+            response = restTemplate.postForObject(saxoAuthUri + "/token", new HttpEntity<>(data, headers), String.class);
+        } catch (RestClientException e) {
+            log.error("Unable to fetch new token", e);
+            return;
+        }
+
+        try {
+            JsonNode responseNode = objectMapper.readTree(response);
+            String accessToken = responseNode.path("access_token").asText();
+            saxoClient.setAccessToken(accessToken);
+            log.debug("Obtained new access token: {}", accessToken);
+
+            int nextRefresh = responseNode.path("expires_in").asInt() * 1000 - 10_000;
+            String refreshToken = responseNode.path("refresh_token").asText();
+            log.debug("Scheduling refresh with token: {}", refreshToken);
+            scheduleRefreshToken(refreshToken, nextRefresh);
+        } catch (JsonProcessingException ignore) {}
     }
 }

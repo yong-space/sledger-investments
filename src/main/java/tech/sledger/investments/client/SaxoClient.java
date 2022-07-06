@@ -3,13 +3,11 @@ package tech.sledger.investments.client;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.model.PriceResponse;
 import tech.sledger.investments.model.SaxoAssetType;
 import tech.sledger.investments.model.SaxoSearchResults;
@@ -54,13 +52,8 @@ public class SaxoClient {
     private <T> T get(String uri, Class<T> responseType) {
         if (headers == null) {
             log.error("Not authenticated yet");
-            return null;
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated yet");
         }
-        if (headers.get("Authorization") != null) {
-            String auth = headers.get("Authorization").toString();
-            log.info("Authorization: {}", auth.substring(8, auth.length() - 1));
-        }
-
         HttpEntity<Object> request = new HttpEntity<>(headers);
         return restTemplate.exchange(saxoUri + uri, HttpMethod.GET, request, responseType).getBody();
     }
