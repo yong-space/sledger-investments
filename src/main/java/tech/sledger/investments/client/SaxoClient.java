@@ -1,5 +1,6 @@
 package tech.sledger.investments.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +10,8 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import tech.sledger.investments.model.PriceResponse;
+import tech.sledger.investments.model.SaxoAssetType;
+import tech.sledger.investments.model.SaxoSearchResults;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,13 +32,18 @@ public class SaxoClient {
         headers.add("Authorization", "Bearer " + accessToken);
     }
 
-    public PriceResponse getPrices(List<Integer> identifiers) {
+    public PriceResponse getPrices(SaxoAssetType assetType, List<Integer> identifiers) {
         String idString = identifiers.stream().map(Object::toString).collect(Collectors.joining(","));
-        return get("/trade/v1/infoprices/list/?AssetType=Stock&Uics=" + idString, PriceResponse.class);
+        return get("/trade/v1/infoprices/list/?AssetType=" + assetType + "&Uics=" + idString, PriceResponse.class);
     }
 
-    public String searchInstruments(String query) {
-        return get("/ref/v1/instruments/?AssetType=Stock&Keywords=" + query, String.class);
+    public SaxoSearchResults searchInstruments(String query) {
+        return get("/ref/v1/instruments/?AssetType=FxSpot&Keywords=" + query, SaxoSearchResults.class);
+    }
+
+    public SaxoSearchResults searchInstruments(List<Integer> identifiers) {
+        String idString = identifiers.toString().replaceAll(" ", "");
+        return get("/ref/v1/instruments/?Uics=" + idString.substring(1, idString.length() - 1), SaxoSearchResults.class);
     }
 
     @Retryable

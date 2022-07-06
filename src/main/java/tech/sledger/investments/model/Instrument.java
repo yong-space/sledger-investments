@@ -8,6 +8,7 @@ import lombok.Data;
 public class Instrument {
     private String name;
     private String symbol;
+    private String currency;
     private int identifier;
     private float price;
 }

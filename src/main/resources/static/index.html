@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Sledger Investments</title>
+        <style>
+            #results {
+                display: block;
+                unicode-bidi: embed;
+                font-family: monospace;
+                white-space: pre;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Instrument Search</h1>
+        <input id="query" />
+        <button onClick="searchInstruments()">Search</button>
+        <button onClick="searchInstrumentsById()">Search By Id</button>
+        <div id="results"></div>
+
+        <script>
+            const searchInstruments = () => {
+                const query = document.querySelector("#query").value;
+                fetch(`/search?query=${query}`)
+                    .then(response => response.json())
+                    .then(response => {
+                        document.querySelector("#results").innerHTML = JSON.stringify(response, null, 3);
+                    });
+            }
+
+            const searchInstrumentsById = () => {
+                const query = document.querySelector("#query").value;
+                fetch(`/search?id=${query}`)
+                    .then(response => response.json())
+                    .then(response => {
+                        document.querySelector("#results").innerHTML = JSON.stringify(response, null, 3);
+                    });
+            }
+        </script>
+    </body>
+</html>

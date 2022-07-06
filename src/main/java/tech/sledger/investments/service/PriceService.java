@@ -1,5 +1,6 @@
 package tech.sledger.investments.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -7,14 +8,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.investments.client.SaxoClient;
-import tech.sledger.investments.model.Instrument;
-import javax.annotation.PostConstruct;
+import tech.sledger.investments.model.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Lazy(false)
@@ -22,43 +23,71 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PriceService {
     private final SaxoClient saxoClient;
-    private final String positions = """
-        38442|D51U:xses|Lippo Malls Indonesia Retail Trust
-        1800003|UD1U:xses|IREIT Global
-        8301033|CMOU:xses|Keppel Pacific Oak US REIT
-        8090883|SE:xnys|Sea Ltd
-    """;
-    private List<Instrument> instruments = new ArrayList<>();
-
-    @PostConstruct
-    public void init() {
-        instruments = positions.lines()
-            .map(line -> {
-                String[] parts = line.split("\\|");
-                return Instrument.builder().identifier(Integer.parseInt(parts[0].trim())).symbol(parts[1]).name(parts[2]).build();
-            })
-            .collect(Collectors.toList());
-    }
+    private List<Position> positions = List.of(
+        new Position(38442, 200_000),
+        new Position(1800003, 32_000),
+        new Position(8301033, 10_000),
+        new Position(8090883, 20)
+    );
 
     @GetMapping("/search")
-    public String searchInstruments(@RequestParam String query) {
+    public SaxoSearchResults searchInstruments(
+        @RequestParam(required=false) String query,
+        @RequestParam(required=false) String id
+    ) {
+        if (id != null) {
+            List<Integer> ids = Stream.of(id.split(",")).map(Integer::parseInt).toList();
+            return saxoClient.searchInstruments(ids);
+        }
         return saxoClient.searchInstruments(query);
     }
-
     @GetMapping("/prices")
-    public List<Instrument> getPrices(HttpServletResponse response) throws IOException {
-        if (!saxoClient.isInit()) {
-            response.sendRedirect("/authorize");
-            return null;
-        }
-        Map<Integer, Instrument> instrumentMap = instruments.stream()
-            .collect(Collectors.toMap(Instrument::getIdentifier, i -> i));
-        return saxoClient.getPrices(new ArrayList<>(instrumentMap.keySet())).getData().stream()
+    public List<Instrument> getPrices() {
+        List<Integer> instrumentIds = new ArrayList<>(positions.stream().map(Position::id).toList());
+        instrumentIds.add(45);
+        List<SaxoInstrument> rawInstruments = saxoClient.searchInstruments(instrumentIds).Data();
+        Map<Integer, Instrument> instrumentMap = rawInstruments.stream()
+            .collect(Collectors.toMap(SaxoInstrument::Identifier, i -> Instrument.builder()
+                .identifier(i.Identifier())
+                .name(i.Description())
+                .symbol(i.Symbol())
+                .currency(i.CurrencyCode())
+                .build()));
+
+        List<PriceEntry> prices = new ArrayList<>(saxoClient.getPrices(SaxoAssetType.Stock, instrumentIds).getData());
+        prices.addAll(saxoClient.getPrices(SaxoAssetType.FxSpot, List.of(45)).getData());
+
+        return prices.stream()
             .map(e -> {
                 Instrument instrument = instrumentMap.get(e.getIdentifier());
                 instrument.setPrice(e.getQuote().getMid());
                 return instrument;
             })
             .collect(Collectors.toList());
+    }
+
+    @GetMapping("/portfolio")
+    public List<PortfolioEntry> getPortfolio(HttpServletResponse response) throws IOException {
+        if (!saxoClient.isInit()) {
+            response.sendRedirect("/authorize");
+            return null;
+        }
+        Map<Integer, Instrument> prices = getPrices().stream()
+            .collect(Collectors.toMap(Instrument::getIdentifier, i -> i));
+
+        return positions.stream().map(position -> {
+            int id = position.id();
+            Instrument instrument = prices.get(id);
+
+            // TODO: calc profit
+            float profit = 0;
+
+            return new PortfolioEntry(
+                instrument.getName(),
+                instrument.getPrice(),
+                position.position(),
+                profit
+            );
+        }).toList();
     }
 }
