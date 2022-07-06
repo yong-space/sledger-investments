@@ -5,11 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.client.SaxoClient;
-import tech.sledger.investments.model.*;
+import tech.sledger.investments.model.Instrument;
+import tech.sledger.investments.model.PortfolioEntry;
+import tech.sledger.investments.model.Position;
 import tech.sledger.investments.model.saxo.AssetType;
-import tech.sledger.investments.model.saxo.RawInstrument;
 import tech.sledger.investments.model.saxo.PriceEntry;
 import tech.sledger.investments.model.saxo.SearchResults;
 import tech.sledger.investments.repository.InstrumentRepo;
@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.groupingBy;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Slf4j
 @RestController
@@ -116,7 +115,7 @@ public class PriceService {
         Map<String, BigDecimal> fxRates = Map.of(
             "SGD", BigDecimal.valueOf(1),
             "HKD", BigDecimal.valueOf(1),
-            "USD", BigDecimal.valueOf(1) // prices.get(45).getPrice()
+            "USD", prices.get(45).getPrice()
         );
 
         return positionRepo.findAll().stream().map(p -> {

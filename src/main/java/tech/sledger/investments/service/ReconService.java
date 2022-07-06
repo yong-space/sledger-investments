@@ -45,6 +45,7 @@ public class ReconService {
                 int latestPosition = 0;
                 BigDecimal totalPrice = BigDecimal.ZERO;
                 BigDecimal totalAmount = BigDecimal.ZERO;
+                BigDecimal totalAmountLocal = BigDecimal.ZERO;
                 BigDecimal totalNotionalAmount = BigDecimal.ZERO;
                 BigDecimal dividends = BigDecimal.ZERO;
 
@@ -55,10 +56,12 @@ public class ReconService {
                             if (latestPosition == 0) {
                                 totalPrice = BigDecimal.ZERO;
                                 totalAmount = BigDecimal.ZERO;
+                                totalAmountLocal = BigDecimal.ZERO;
                                 totalNotionalAmount = BigDecimal.ZERO;
                                 dividends = BigDecimal.ZERO;
                             } else {
                                 totalAmount = totalAmount.add(t.getAmount());
+                                totalAmountLocal = totalAmountLocal.add(t.getAmount().multiply(t.getFxRate()));
                                 totalPrice = totalPrice.add(t.getPrice());
                                 totalNotionalAmount = totalNotionalAmount.add(t.getPrice().multiply(BigDecimal.valueOf(t.getQuantity())));
                             }
@@ -76,7 +79,7 @@ public class ReconService {
                     .buyPrice(totalAmount.divide(BigDecimal.valueOf(latestPosition), RoundingMode.HALF_EVEN).abs())
                     .buyFees(totalAmount.abs().subtract(totalNotionalAmount))
                     .dividends(dividends)
-                    .buyFx(BigDecimal.ONE)
+                    .buyFx(totalAmountLocal.divide(totalAmount, RoundingMode.HALF_EVEN))
                     .build();
                 positions.add(position);
             }

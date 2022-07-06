@@ -18,4 +18,5 @@ public class Transaction {
     private String ticker;
     private Integer quantity;
     private Integer instrumentId;
+    private BigDecimal fxRate;
 }
