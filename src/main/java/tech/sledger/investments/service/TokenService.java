@@ -65,8 +65,7 @@ public class TokenService {
         data.add("redirect_uri", saxoRedirectUri);
         data.add("client_id", saxoClientId);
         data.add("client_secret", saxoClientSecret);
-        String accessToken = getNewToken(data);
-        log.info("Obtained new access token: {}", accessToken);
+        getNewToken(data);
         response.sendRedirect("/");
         return null;
     }
@@ -97,6 +96,7 @@ public class TokenService {
 
         String accessToken = responseNode.path("access_token").asText();
         saxoClient.setAccessToken(accessToken);
+        log.info("Obtained new access token: {}", accessToken);
         return accessToken;
     }
 
@@ -104,7 +104,6 @@ public class TokenService {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                log.info("Refreshing token");
                 MultiValueMap<String, String> data = new LinkedMultiValueMap<>();
                 data.add("grant_type", "refresh_token");
                 data.add("refresh_token", refreshToken);
