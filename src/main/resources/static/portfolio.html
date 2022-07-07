@@ -1,104 +1,167 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Sledger Investments</title>
-        <style>
-            * { font-family: "JetBrains Mono", serif }
-            table { border-collapse: collapse }
-            h1 { font-size: 1.5rem }
-            table, th, td {
-                border: #555 1px solid;
-                font-size: .8rem;
-            }
-            th, td { padding: .5rem }
-            td.number { text-align: right }
-            .green { color: mediumseagreen }
-            .red { color: darkred }
-            .select { cursor: pointer }
-        </style>
-    </head>
-    <body>
-        <h1>SGX Portfolio</h1>
-        <table>
-            <tr class="headers"></tr>
-            <tbody id="sgx-portfolio"></tbody>
-        </table>
+<head>
+    <title>Portfolio</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width" />
+    <script crossorigin="anonymous" src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/@mui/material@5.0.0/umd/material-ui.production.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <style>
+        table, th, td { border: #555 1px solid }
+        th, td { padding: .5rem }
+        td.green { color: lightgreen }
+        td.red { color: palevioletred }
+        th.select { cursor: pointer }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+    const {
+        ThemeProvider,
+        createTheme,
+        CssBaseline,
+        Typography,
+        Container,
+        Box,
+        Table,
+        TableBody,
+        TableCell,
+        TableContainer,
+        TableHead,
+        TableRow,
+        Paper,
+    } = MaterialUI;
 
-        <h1>US Portfolio</h1>
-        <table>
-            <tr class="headers"></tr>
-            <tbody id="us-portfolio"></tbody>
-        </table>
+    const darkTheme = createTheme({
+        palette: { mode: 'dark' },
+    });
 
-        <script>
-            const format = (num, decimals = 2) => num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-            const formatColour = (num, decimals = 2) => `<span class="${num > 0 ? 'green' : num < 0 ? 'red' : ''}">${format(num, decimals)}</span>`;
-            const portfolioEntry = ({ symbol, name, position, price, dividends, changeToday, changeTodayPercentage, profit, profitPercentage }) => `
-                <tr>
-                    <td>${symbol}</td>
-                    <td>${name}</td>
-                    <td class="number">${format(position, 0)}</td>
-                    <td class="number">${format(price, 3)}</td>
-                    <td class="number">${formatColour(dividends)}</td>
-                    <td class="number">${formatColour(changeToday)}</td>
-                    <td class="number">${formatColour(changeTodayPercentage, 1)}</td>
-                    <td class="number">${formatColour(profit)}</td>
-                    <td class="number">${formatColour(profitPercentage, 1)}</td>
-                </tr>
-            `;
+    const fields = [
+        { field: 'symbol', label: "Symbol", sortable: true },
+        { field: 'name', label: "Name", sortable: true },
+        { field: 'position', label: "Position", sortable: false, decimals: 0 },
+        { field: 'price', label: "Price", sortable: false, decimals: 3 },
+        { field: 'dividends', label: "Dividends", sortable: true, colour: true, decimals: 2 },
+        { field: 'changeToday', label: "Today P&L", sortable: true, colour: true, decimals: 2 },
+        { field: 'changeTodayPercentage', label: "Today %", sortable: true, colour: true, decimals: 1 },
+        { field: 'profit', label: "P&L", sortable: true, colour: true, decimals: 2 },
+        { field: 'profitPercentage', label: "P&L %", sortable: true, colour: true, decimals: 1 },
+    ];
 
-            const formatRows = (data, sortField) => {
-                data.sort((a, b) => a[sortField] > b[sortField] ? 1 : -1);
-                const amount = data.map(i => i.amount).reduce((a, b) => a += b);
-                const profitToday = data.map(i => i.changeToday).reduce((a, b) => a += b);
-                const profitTodayPercent = profitToday * 100 / amount;
-                const profit = data.map(i => i.profit).reduce((a, b) => a += b);
-                const profitPercent = profit * 100 / amount;
+    const sort = (data, sortField) => {
+        data.sort((a, b) => a[sortField] > b[sortField] ? 1 : -1);
+        return data;
+    }
 
-                return data.map(entry => portfolioEntry(entry)).join("") +
-                    `<tr>
-                        <td colspan="5"></td>
-                        <td class="number">${formatColour(profitToday)}</td>
-                        <td class="number">${formatColour(profitTodayPercent, 1)}</td>
-                        <td class="number">${formatColour(profit)}</td>
-                        <td class="number">${formatColour(profitPercent, 1)}</td>
-                    </tr>`;
-            };
+    const PortTable = ({ label, data, setData }) => {
+        const [ originalData ] = React.useState(data);
+        const sortData = (sortField) => setData(sort([ ...originalData ], sortField));
 
-            let storedData;
+        const HeaderTableCell = ({ field, label, sortable }) => {
+            return (
+                <TableCell
+                    key={field}
+                    onClick={() => { sortable ? sortData(field) : void(0) }}
+                    className={sortable ? 'select' : ''}
+                >
+                    {label}
+                </TableCell>
+            )
+        };
 
-            const formatData = (sortField) => {
-                const sgxData = storedData.filter(i => i.symbol.endsWith(':xses'));
-                document.querySelector("#sgx-portfolio").innerHTML = formatRows(sgxData, sortField);
+        const DataTableCell = ({ value, decimals, colour }) => {
+            const formatted = !decimals || !value ? value : value.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+            return (
+                <TableCell
+                    align={ decimals ? 'right' : 'left' }
+                    className={ colour ? (value > 0 ? 'green' : value < 0 ? 'red' : '') : '' }
+                >
+                    {formatted}
+                </TableCell>
+            );
+        };
 
-                const usData = storedData.filter(i => !i.symbol.endsWith(':xses'));
-                document.querySelector("#us-portfolio").innerHTML = formatRows(usData, sortField);
-            };
+        const SummaryRow = ({ data }) => {
+            const amount = data.map(i => i.amount).reduce((a, b) => a += b);
+            const changeToday = data.map(i => i.changeToday).reduce((a, b) => a += b);
+            const changeTodayPercentage = changeToday * 100 / amount;
+            const profit = data.map(i => i.profit).reduce((a, b) => a += b);
+            const profitPercentage = profit * 100 / amount;
 
-            const headers = () => `
-                <th class="select" onClick="formatData('symbol')">Symbol</th>
-                <th class="select" onClick="formatData('name')">Name</th>
-                <th>Position</th>
-                <th>Price</th>
-                <th class="select" onClick="formatData('dividends')">Dividends</th>
-                <th class="select" onClick="formatData('changeToday')">Today P&L</th>
-                <th class="select" onClick="formatData('changeTodayPercentage')">Today %</th>
-                <th class="select" onClick="formatData('profit')">P&L</th>
-                <th class="select" onClick="formatData('profitPercentage')">P&L %</th>
-            `;
+            return (
+                <TableRow>
+                    <TableCell colSpan={5}></TableCell>
+                    <DataTableCell value={changeToday} {...fields[5]} />
+                    <DataTableCell value={changeTodayPercentage} {...fields[6]} />
+                    <DataTableCell value={profit} {...fields[7]} />
+                    <DataTableCell value={profitPercentage} {...fields[8]} />
+                </TableRow>
+            );
+        }
 
+        return (
+            <React.Fragment>
+                <Typography variant="h5" gutterBottom>
+                    {label} Portfolio
+                </Typography>
+                <TableContainer component={Paper} sx={{ my: "1rem" }}>
+                    <Table size="small" aria-label="simple table">
+                        <TableHead>
+                            <TableRow>
+                                { fields.map((field) => <HeaderTableCell {...field} />) }
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {data.map((row) => (
+                                <TableRow key={row.symbol}>
+                                    { fields.map((field) => <DataTableCell value={row[field.field]} {...field} />) }
+                                </TableRow>
+                            ))}
+                            <SummaryRow data={data} />
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </React.Fragment>
+        );
+    };
+
+    const App = () => {
+        const [ usData, setUsData ] = React.useState();
+        const [ sgData, setSgData ] = React.useState();
+
+        React.useEffect(() => {
             fetch('/portfolio')
-                .then(response => {
+                .then((response) => {
                     if (!response.ok) {
                         document.location = '/authorize';
                     }
                     return response.json();
                 })
-                .then(data => {
-                    document.querySelectorAll('.headers').forEach(h => h.innerHTML = headers());
-                    storedData = data;
-                    formatData('changeTodayPercentage');
+                .then((response) => {
+                    setUsData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+                    setSgData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
                 });
-        </script>
-    </body>
+        }, []);
+
+        return (
+            <ThemeProvider theme={darkTheme}>
+                <Container>
+                    <CssBaseline />
+                    <Box sx={{ my: 4 }}>
+                        { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
+                        { sgData ? <PortTable label="SG" data={sgData} setData={setSgData} /> : '' }
+                    </Box>
+                </Container>
+            </ThemeProvider>
+        );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
 </html>
