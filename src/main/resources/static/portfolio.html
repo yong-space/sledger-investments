@@ -35,11 +35,22 @@
         TableHead,
         TableRow,
         Paper,
+        Autocomplete,
+        TextField,
+        Button,
     } = MaterialUI;
 
     const darkTheme = createTheme({
         palette: { mode: 'dark' },
     });
+
+    const debounce = (func, timeout = 300) => {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+    };
 
     const fields = [
         { field: 'symbol', label: "Symbol", sortable: true },
@@ -106,9 +117,7 @@
 
         return (
             <React.Fragment>
-                <Typography variant="h5" gutterBottom>
-                    {label} Portfolio
-                </Typography>
+                <Typography variant="h5">{label} Portfolio</Typography>
                 <TableContainer component={Paper} sx={{ my: "1rem" }}>
                     <Table size="small" aria-label="simple table">
                         <TableHead>
@@ -130,6 +139,31 @@
         );
     };
 
+    const InstrumentPicker = ({ value, setValue }) => {
+        const [options, setOptions] = React.useState([]);
+        const search = debounce((event, inputValue) => {
+            if (inputValue.trim().length === 0) {
+                setOptions([]);
+                return;
+            }
+            fetch(`/search?query=${inputValue.trim()}`)
+                .then((response) => response.json())
+                .then((response) => setOptions(response.Data));
+        }, 300);
+
+        return (
+            <Autocomplete
+                filterOptions={(x) => x}
+                options={options}
+                value={value}
+                onInputChange={search}
+                onChange={(event, newValue) => setValue(newValue)}
+                renderInput={(params) => <TextField {...params} label="Instrument" />}
+                getOptionLabel={(option) => `${option.Symbol} ${option.Description}`}
+            />
+        );
+    };
+
     const App = () => {
         const [ usData, setUsData ] = React.useState();
         const [ sgData, setSgData ] = React.useState();
@@ -143,18 +177,28 @@
                     return response.json();
                 })
                 .then((response) => {
-                    setUsData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
-                    setSgData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+                    setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+                    setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
                 });
         }, []);
+
+        const [ instrument, setInstrument ] = React.useState(null);
 
         return (
             <ThemeProvider theme={darkTheme}>
                 <Container>
                     <CssBaseline />
                     <Box sx={{ my: 4 }}>
-                        { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
                         { sgData ? <PortTable label="SG" data={sgData} setData={setSgData} /> : '' }
+                        { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
+                    </Box>
+                    <Box sx={{ display: 'inline-flex', flexDirection: "column", gap: '1rem', my: 4 }}>
+                        <Typography variant="h5">Add Trade</Typography>
+                        <InstrumentPicker value={instrument} setValue={setInstrument} />
+                        <TextField label="Price" />
+                        <TextField label="Quantity" />
+                        <TextField label="Notional" />
+                        <Button variant="contained">Add Trade</Button>
                     </Box>
                 </Container>
             </ThemeProvider>

@@ -34,12 +34,6 @@ public class PriceService {
     private final PositionRepo positionRepo;
     private final InstrumentRepo instrumentRepo;
 
-    @GetMapping("/")
-    public void home(HttpServletResponse response) throws IOException {
-        String nextUrl = saxoClient.isNotAuthenticated() ? "/authorize" : "/portfolio.html";
-        response.sendRedirect(nextUrl);
-    }
-
     @GetMapping("/search")
     public SearchResults searchInstruments(
         @RequestParam(required=false) String query,
