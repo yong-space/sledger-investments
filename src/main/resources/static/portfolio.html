@@ -4,7 +4,7 @@
     <title>Portfolio</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1, width=device-width" />
-    <script crossorigin="anonymous" src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone@7.18.8/babel.min.js"></script>
     <script crossorigin="anonymous" src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin="anonymous" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin="anonymous" src="https://unpkg.com/@mui/material@5.0.0/umd/material-ui.production.min.js"></script>
@@ -38,6 +38,8 @@
         Autocomplete,
         TextField,
         Button,
+        Snackbar,
+        SnackbarContent
     } = MaterialUI;
 
     const darkTheme = createTheme({
@@ -158,9 +160,62 @@
                 value={value}
                 onInputChange={search}
                 onChange={(event, newValue) => setValue(newValue)}
-                renderInput={(params) => <TextField {...params} label="Instrument" />}
+                renderInput={(params) => <TextField required {...params} name="instrument" size="small" label="Instrument" />}
                 getOptionLabel={(option) => `${option.Symbol} ${option.Description}`}
             />
+        );
+    };
+
+    const AddTradeForm = ({ refreshData }) => {
+        const [ snackbarOpen, setSnackbarOpen ] = React.useState(false);
+        const [ snackbarMsg, setSnackbarMsg ] = React.useState();
+        const [ instrument, setInstrument ] = React.useState(null);
+        const addTrade = (e) => {
+            e.preventDefault();
+            const values = Object.values(e.target)
+                .filter(field => field.type === 'number')
+                .reduce((obj,field) => { obj[field.name] = field.valueAsNumber; return obj }, {});
+            values.instrument = instrument?.Identifier;
+            values.ticker = instrument?.Symbol;
+
+            fetch('/add-trade', {
+                method: "post",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values)
+            })
+            .then((response) => {
+                setSnackbarMsg('Trade Added')
+                setSnackbarOpen(true);
+                setInstrument(null);
+                e.target.reset();
+                refreshData();
+            });
+        };
+        const inputProps = { step: 'any' };
+        const snackbarStyle = {
+            color: 'white',
+            fontWeight: 'bold',
+            backgroundColor: '#4e9a51'
+        };
+        return (
+            <form onSubmit={addTrade}>
+                <Box sx={{ display: 'inline-flex', width: '30rem', maxWidth: '100%', flexDirection: "column", gap: '1rem', my: 4 }}>
+                    <Typography variant="h5">Add Trade</Typography>
+                    <InstrumentPicker value={instrument} setValue={setInstrument} />
+                    <TextField required size="small" type="number" inputProps={inputProps} name="price" label="Price" />
+                    <TextField required size="small" type="number" name="quantity" label="Quantity" />
+                    <TextField required size="small" type="number" inputProps={inputProps} name="notional" label="Notional" />
+                    <Button type="submit" variant="contained">Add Trade</Button>
+                </Box>
+
+                <Snackbar
+                    open={snackbarOpen}
+                    onClose={() => setSnackbarOpen(false)}
+                    autoHideDuration={2000}
+                >
+                    <SnackbarContent style={snackbarStyle} message={snackbarMsg} />
+                </Snackbar>
+            </form>
         );
     };
 
@@ -168,21 +223,19 @@
         const [ usData, setUsData ] = React.useState();
         const [ sgData, setSgData ] = React.useState();
 
-        React.useEffect(() => {
-            fetch('/portfolio')
-                .then((response) => {
-                    if (!response.ok) {
-                        document.location = '/authorize';
-                    }
-                    return response.json();
-                })
-                .then((response) => {
-                    setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
-                    setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
-                });
-        }, []);
+        const refreshData = () => fetch('/portfolio')
+            .then((response) => {
+                if (!response.ok) {
+                    document.location = '/authorize';
+                }
+                return response.json();
+            })
+            .then((response) => {
+                setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+                setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+            });
 
-        const [ instrument, setInstrument ] = React.useState(null);
+        React.useEffect(refreshData, []);
 
         return (
             <ThemeProvider theme={darkTheme}>
@@ -192,14 +245,7 @@
                         { sgData ? <PortTable label="SG" data={sgData} setData={setSgData} /> : '' }
                         { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
                     </Box>
-                    <Box sx={{ display: 'inline-flex', flexDirection: "column", gap: '1rem', my: 4 }}>
-                        <Typography variant="h5">Add Trade</Typography>
-                        <InstrumentPicker value={instrument} setValue={setInstrument} />
-                        <TextField label="Price" />
-                        <TextField label="Quantity" />
-                        <TextField label="Notional" />
-                        <Button variant="contained">Add Trade</Button>
-                    </Box>
+                    <AddTradeForm refreshData={refreshData} />
                 </Container>
             </ThemeProvider>
         );

@@ -14,8 +14,6 @@ import tech.sledger.investments.model.saxo.PriceEntry;
 import tech.sledger.investments.model.saxo.SearchResults;
 import tech.sledger.investments.repository.InstrumentRepo;
 import tech.sledger.investments.repository.PositionRepo;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
