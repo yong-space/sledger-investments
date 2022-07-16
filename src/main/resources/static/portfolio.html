@@ -15,6 +15,7 @@
         th, td { padding: .5rem }
         td.green { color: lightgreen }
         td.red { color: palevioletred }
+        th { user-select: none }
         th.select { cursor: pointer }
     </style>
 </head>
@@ -66,14 +67,28 @@
         { field: 'profitPercentage', label: "P&L %", sortable: true, colour: true, decimals: 1 },
     ];
 
-    const sort = (data, sortField) => {
-        data.sort((a, b) => a[sortField] > b[sortField] ? 1 : -1);
+    const sort = (data, sortField, sortAsc) => {
+        console.log('sorting by ' + sortField + ' ' + sortAsc)
+        data.sort((a, b) => a[sortField] > b[sortField] ? (sortAsc ? 1 : -1) : (sortAsc ? -1 : 1));
         return data;
     }
 
     const PortTable = ({ label, data, setData }) => {
         const [ originalData ] = React.useState(data);
-        const sortData = (sortField) => setData(sort([ ...originalData ], sortField));
+        const [ sortField, setSortField ] = React.useState('changeTodayPercentage');
+        const [ sortAsc, setSortAsc ] = React.useState(true);
+        const sortData = (newSortField) => {
+            let order = sortAsc;
+            if (newSortField === sortField) {
+                order = !order;
+                setSortAsc(order);
+            } else {
+                setSortField(newSortField);
+                order = true;
+                setSortAsc(order);
+            }
+            setData(sort([ ...originalData ], newSortField, order));
+        };
 
         const HeaderTableCell = ({ field, label, sortable }) => {
             return (
@@ -83,6 +98,7 @@
                     className={sortable ? 'select' : ''}
                 >
                     {label}
+                    { (sortField === field) && <Box sx={{ float: 'right'}}>{ sortAsc ? '▲' : '▼' }</Box> }
                 </TableCell>
             )
         };
@@ -231,8 +247,8 @@
                 return response.json();
             })
             .then((response) => {
-                setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
-                setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage'));
+                setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage', true));
+                setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage', true));
             });
 
         React.useEffect(refreshData, []);
