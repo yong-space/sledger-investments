@@ -17,6 +17,7 @@
         td.red { color: palevioletred }
         th { user-select: none }
         th.select { cursor: pointer }
+        input { color-scheme: dark }
     </style>
 </head>
 <body>
@@ -176,7 +177,7 @@
                 value={value}
                 onInputChange={search}
                 onChange={(event, newValue) => setValue(newValue)}
-                renderInput={(params) => <TextField required {...params} name="instrument" size="small" label="Instrument" />}
+                renderInput={(params) => <TextField fullWidth required {...params} name="instrument" size="small" label="Instrument" />}
                 getOptionLabel={(option) => `${option.Symbol} ${option.Description}`}
             />
         );
@@ -221,11 +222,11 @@
             <form onSubmit={addTrade}>
                 <Box sx={{ display: 'inline-flex', width: '30rem', maxWidth: '100%', flexDirection: "column", gap: '1rem', my: 4 }}>
                     <Typography variant="h5">Add Trade</Typography>
-                    <TextField required size="small" type="date" name="date" label="Date" defaultValue={new Date().toISOString().substring(0, 10)} />
+                    <TextField fullWidth required size="small" type="date" name="date" label="Date" defaultValue={new Date().toISOString().substring(0, 10)} />
                     <InstrumentPicker value={instrument} setValue={setInstrument} />
-                    <TextField required size="small" type="number" inputProps={inputProps} name="price" label="Price" />
-                    <TextField required size="small" type="number" name="quantity" label="Quantity" />
-                    <TextField required size="small" type="number" inputProps={inputProps} name="notional" label="Notional" />
+                    <TextField fullWidth required size="small" type="number" inputProps={inputProps} name="price" label="Price" />
+                    <TextField fullWidth required size="small" type="number" name="quantity" label="Quantity" />
+                    <TextField fullWidth required size="small" type="number" inputProps={inputProps} name="notional" label="Notional" />
                     <Button type="submit" variant="contained">Add Trade</Button>
                 </Box>
 
