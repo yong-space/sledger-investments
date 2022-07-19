@@ -26,6 +26,7 @@ public class ReconService {
     private final InstrumentRepo instrumentRepo;
 
     public void reconcilePositions() {
+        log.info("Reconciling positions");
         positionRepo.deleteAll();
 
         List<Position> positions = new ArrayList<>();

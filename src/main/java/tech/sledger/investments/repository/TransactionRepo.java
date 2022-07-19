@@ -9,6 +9,7 @@ import java.util.List;
 public interface TransactionRepo extends MongoRepository<Transaction, Integer> {
     Transaction findFirstByOrderByIdDesc();
     Transaction findFirstByTypeAndDateLessThanEqualAndPriceIsNotNullOrderByDateDesc(TransactionType type, Instant date);
+    Transaction findFirstByTypeAndDateGreaterThanAndPriceIsNotNullOrderByDate(TransactionType type, Instant date);
     List<Transaction> findAllByInstrumentIdIsNotNullOrderByDate();
     List<Transaction> findAllByTypeOrderByDate(TransactionType type);
 }
