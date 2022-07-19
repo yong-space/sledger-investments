@@ -108,11 +108,18 @@
             )
         };
 
+        const formatNumber = (value, decimals) => {
+            const parts = value.toFixed(decimals).split(".");
+            const whole = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return (parts[1] && decimals > 0) ? `${whole}.${parts[1]}` : whole;
+        };
+
         const DataTableCell = ({ value, decimals, colour }) => {
-            const formatted = !decimals || !value ? value : value.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+            const decimalsDefined = parseInt(decimals) % 1 === 0;
+            const formatted = (!decimalsDefined || !value) ? value : formatNumber(value, decimals);
             return (
                 <TableCell
-                    align={ decimals ? 'right' : 'left' }
+                    align={ decimalsDefined ? 'right' : 'left' }
                     className={ colour ? (value > 0 ? 'green' : value < 0 ? 'red' : '') : '' }
                 >
                     {formatted}
