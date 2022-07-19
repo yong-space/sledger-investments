@@ -27,7 +27,7 @@ public class TradeService {
     private final InstrumentRepo instrumentRepo;
     private final SaxoClient saxoClient;
 
-    @PostMapping("/add-trade")
+    @PostMapping("/add-tx")
     public void addTrade(@RequestBody NewTrade newTrade) {
         log.info(newTrade.toString());
 

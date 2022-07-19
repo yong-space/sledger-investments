@@ -161,34 +161,30 @@
         );
     };
 
-    const InstrumentPicker = ({ value, setValue }) => {
+    const InstrumentPicker = ({ api, instrument, setInstrument }) => {
         const [options, setOptions] = React.useState([]);
         const search = debounce((event, inputValue) => {
             if (inputValue.trim().length === 0) {
                 setOptions([]);
                 return;
             }
-            fetch(`/search?query=${inputValue.trim()}`)
-                .then((response) => response.json())
-                .then((response) => setOptions(response.Data));
+            api(`/search?query=${inputValue.trim()}`, null, (response) => setOptions(response.Data));
         }, 300);
 
         return (
             <Autocomplete
                 filterOptions={(x) => x}
                 options={options}
-                value={value}
+                value={instrument}
                 onInputChange={search}
-                onChange={(event, newValue) => setValue(newValue)}
+                onChange={(event, newValue) => setInstrument(newValue)}
                 renderInput={(params) => <TextField fullWidth required {...params} name="instrument" size="small" label="Instrument" />}
                 getOptionLabel={(option) => `${option.Symbol} ${option.Description}`}
             />
         );
     };
 
-    const AddTradeForm = ({ refreshData }) => {
-        const [ snackbarOpen, setSnackbarOpen ] = React.useState(false);
-        const [ snackbarMsg, setSnackbarMsg ] = React.useState();
+    const AddTransactionForm = ({ api, refreshData, setSnackbar }) => {
         const [ instrument, setInstrument ] = React.useState(null);
         const addTrade = (e) => {
             e.preventDefault();
@@ -202,63 +198,61 @@
             values.instrument = instrument?.Identifier;
             values.ticker = instrument?.Symbol;
 
-            fetch('/add-trade', {
-                method: "post",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values)
-            })
-            .then((response) => {
-                setSnackbarMsg('Trade Added')
-                setSnackbarOpen(true);
+            api('/add-tx', values, () => {
+                setSnackbar({ open: true, error: false, msg: 'Trade Added' });
                 setInstrument(null);
                 e.target.reset();
                 refreshData();
             });
         };
         const inputProps = { step: 'any' };
-        const snackbarStyle = {
-            color: 'white',
-            fontWeight: 'bold',
-            backgroundColor: '#4e9a51'
-        };
         return (
             <form onSubmit={addTrade}>
                 <Box sx={{ display: 'inline-flex', width: '30rem', maxWidth: '100%', flexDirection: "column", gap: '1rem', my: 4 }}>
                     <Typography variant="h5">Add Trade</Typography>
                     <TextField fullWidth required size="small" type="date" name="date" label="Date" defaultValue={new Date().toISOString().substring(0, 10)} />
-                    <InstrumentPicker value={instrument} setValue={setInstrument} />
+                    <InstrumentPicker {...{ api, instrument, setInstrument }} />
                     <TextField fullWidth required size="small" type="number" inputProps={inputProps} name="price" label="Price" />
                     <TextField fullWidth required size="small" type="number" name="quantity" label="Quantity" />
                     <TextField fullWidth required size="small" type="number" inputProps={inputProps} name="notional" label="Notional" />
                     <Button type="submit" variant="contained">Add Trade</Button>
                 </Box>
-
-                <Snackbar
-                    open={snackbarOpen}
-                    onClose={() => setSnackbarOpen(false)}
-                    autoHideDuration={2000}
-                >
-                    <SnackbarContent style={snackbarStyle} message={snackbarMsg} />
-                </Snackbar>
             </form>
         );
     };
 
     const App = () => {
+        const [ snackbar, setSnackbar ] = React.useState({ open: false });
         const [ usData, setUsData ] = React.useState();
         const [ sgData, setSgData ] = React.useState();
+        const snackbarStyle = { color: 'white', fontWeight: 'bold' };
 
-        const refreshData = () => fetch('/portfolio')
-            .then((response) => {
-                if (!response.ok) {
-                    document.location = '/authorize';
-                }
-                return response.json();
-            })
-            .then((response) => {
-                setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
-                setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
-            });
+        const api = (uri, body, callback) => {
+            const config = body && {
+                method: "post",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            };
+            fetch(uri, config)
+                .then(async (response) => {
+                    if (response.ok) {
+                        return response?.json() || response?.text();
+                    } else {
+                        throw await response.json();
+                    }
+                })
+                .then(callback)
+                .catch((response) => {
+                    const { status, error, message } = response;
+                    setSnackbar({ open: true, error: true, msg: `Error ${status||''} ${error||''}: ${message}` });
+                    console.log(response);
+                });
+        }
+
+        const refreshData = () => api('/portfolio', null, (response) => {
+            setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
+            setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
+        });
 
         React.useEffect(refreshData, []);
 
@@ -271,9 +265,16 @@
                             { sgData ? <PortTable label="SG" data={sgData} setData={setSgData} /> : '' }
                             { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
                         </Box>
-                        <AddTradeForm refreshData={refreshData} />
+                        <AddTransactionForm {...{ api, setSnackbar, refreshData }} />
                     </Container>
                 )}
+                <Snackbar
+                    open={snackbar.open}
+                    onClose={() => setSnackbar({ open: false })}
+                    autoHideDuration={snackbar.error ? 10000 : 3000}
+                >
+                    <SnackbarContent style={{ ...snackbarStyle, backgroundColor: snackbar.error ? '#d74545' : '#4e9a51' }} message={snackbar.msg} />
+                </Snackbar>
             </ThemeProvider>
         );
     };
