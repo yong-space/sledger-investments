@@ -1,19 +1,34 @@
-FROM arm64v8/debian:bullseye-slim
+FROM openjdk:18-slim-bullseye
 WORKDIR /build
-RUN apt-get update -y && apt-get install wget -y
-RUN wget -q https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-linux-aarch64-21.3.0.tar.gz
-RUN tar -xzf *.tar.gz
-RUN graalvm-ce-java17-21.3.0/bin/jlink --no-header-files --no-man-pages --compress=2 --strip-java-debug-attributes --output /jvm --add-modules \
-java.base,java.compiler,java.instrument,java.logging,java.management,java.naming,java.prefs,jdk.net,\
-java.rmi,java.security.jgss,java.security.sasl,java.transaction.xa,java.xml,jdk.httpserver,\
-jdk.management,jdk.unsupported,jdk.naming.dns,jdk.crypto.ec,java.desktop,java.scripting,java.sql
 COPY ./build/libs/*.jar app.jar
-RUN graalvm-ce-java17-21.3.0/bin/jar -xf app.jar
+RUN jar -xf app.jar
+RUN jdeps \
+    --ignore-missing-deps \
+    --print-module-deps \
+    -q \
+    --recursive \
+    --multi-release 17 \
+    --class-path="BOOT-INF/lib/*" \
+    --module-path="BOOT-INF/lib/*" \
+    app.jar > /deps
+RUN echo $(cat /deps),jdk.crypto.ec > /deps
 RUN mkdir /app && cp -r META-INF /app && cp -r BOOT-INF/classes/* /app
 
-FROM arm64v8/debian:bullseye-slim
+FROM openjdk:17-slim-bullseye
+COPY --from=0 /deps /deps
+RUN jlink \
+    --verbose \
+    --add-modules $(cat /deps) \
+    --strip-java-debug-attributes \
+    --no-man-pages \
+    --no-header-files \
+    --compress=2 \
+    --output /jre
+
+FROM debian:bullseye-slim
+COPY --from=1 /jre /jre
+RUN ln -s /jre/bin/java /bin/java
 WORKDIR /app
-COPY --from=0 /jvm /jvm
 COPY --from=0 /build/BOOT-INF/lib /lib
 COPY --from=0 /app .
-ENTRYPOINT [ "/jvm/bin/java", "-cp", ".:/lib/*", "tech.sledger.investments.Investments", "--spring.profiles.active=prod" ]
+ENTRYPOINT [ "java", "-cp", ".:/lib/*", "tech.sledger.investments.Investments", "--spring.profiles.active=prod" ]
