@@ -81,7 +81,7 @@
     const PortTable = ({ label, data, setData }) => {
         const [ originalData ] = React.useState(data);
         const [ sortField, setSortField ] = React.useState('changeTodayPercentage');
-        const [ sortAsc, setSortAsc ] = React.useState(true);
+        const [ sortAsc, setSortAsc ] = React.useState(false);
         const sortData = (newSortField) => {
             let order = sortAsc;
             if (newSortField === sortField) {
@@ -89,8 +89,6 @@
                 setSortAsc(order);
             } else {
                 setSortField(newSortField);
-                order = true;
-                setSortAsc(order);
             }
             setData(sort([ ...originalData ], newSortField, order));
         };
@@ -129,9 +127,9 @@
 
         const SummaryRow = ({ data }) => {
             const amount = data.map(i => i.amount).reduce((a, b) => a += b);
-            const changeToday = data.map(i => i.changeToday).reduce((a, b) => a += b);
+            const changeToday = data.map(i => i['changeToday']).reduce((a, b) => a += b);
             const changeTodayPercentage = changeToday * 100 / amount;
-            const profit = data.map(i => i.profit).reduce((a, b) => a += b);
+            const profit = data.map(i => i['profit']).reduce((a, b) => a += b);
             const profitPercentage = profit * 100 / amount;
 
             return (
@@ -149,7 +147,7 @@
             <React.Fragment>
                 <Typography variant="h5">{label} Portfolio</Typography>
                 <TableContainer component={Paper} sx={{ my: "1rem" }}>
-                    <Table size="small" aria-label="simple table">
+                    <Table size="small">
                         <TableHead>
                             <TableRow>
                                 { fields.map((field) => <HeaderTableCell {...field} />) }
@@ -176,7 +174,7 @@
                 setOptions([]);
                 return;
             }
-            api(`/search?query=${inputValue.trim()}`, null, (response) => setOptions(response.Data));
+            api(`/search?query=${inputValue.trim()}`, null, (response) => setOptions(response['Data']));
         }, 300);
 
         return (
@@ -187,7 +185,7 @@
                 onInputChange={search}
                 onChange={(event, newValue) => setInstrument(newValue)}
                 renderInput={(params) => <TextField fullWidth required {...params} name="instrument" size="small" label="Instrument" />}
-                getOptionLabel={(option) => `${option.Symbol} ${option.Description}`}
+                getOptionLabel={(option) => `${option.Symbol} ${option['Description']}`}
             />
         );
     };
