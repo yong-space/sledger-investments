@@ -78,8 +78,8 @@
         return data;
     }
 
-    const PortTable = ({ label, data, setData }) => {
-        const [ originalData ] = React.useState(data);
+    const PortTable = ({ label, data }) => {
+        const [ viewData, setViewData ] = React.useState(data);
         const [ sortField, setSortField ] = React.useState('changeTodayPercentage');
         const [ sortAsc, setSortAsc ] = React.useState(false);
         const sortData = (newSortField) => {
@@ -90,7 +90,7 @@
             } else {
                 setSortField(newSortField);
             }
-            setData(sort([ ...originalData ], newSortField, order));
+            setViewData(sort([ ...data ], newSortField, order));
         };
 
         const HeaderTableCell = ({ field, label, sortable }) => {
@@ -154,12 +154,12 @@
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.map((row) => (
+                            {viewData.map((row) => (
                                 <TableRow key={row.symbol}>
                                     { fields.map((field) => <DataTableCell value={row[field.field]} {...field} />) }
                                 </TableRow>
                             ))}
-                            <SummaryRow data={data} />
+                            <SummaryRow data={viewData} />
                         </TableBody>
                     </Table>
                 </TableContainer>
@@ -218,7 +218,7 @@
             const instrumentAuto = (<InstrumentPicker {...{ api, instrument, setInstrument }} />);
             const instrumentText = (<TextField fullWidth required size="small" name="instrument" label="Instrument" />);
             const price = (<TextField fullWidth required size="small" type="number" inputProps={inputProps} name="price" label="Price" />);
-            const quantity = (<TextField fullWidth required size="small" type="number" name="quantity" label="Quantity" />);
+            const quantity = (<TextField fullWidth required size="small" type="number" inputProps={inputProps} name="quantity" label="Quantity" />);
             const notional = (<TextField fullWidth required size="small" type="number" inputProps={inputProps} name="notional" label="Notional" />);
 
             switch (txType) {
@@ -251,8 +251,7 @@
 
     const App = () => {
         const [ snackbar, setSnackbar ] = React.useState({ open: false });
-        const [ usData, setUsData ] = React.useState();
-        const [ sgData, setSgData ] = React.useState();
+        const [ data, setData ] = React.useState();
         const snackbarStyle = { color: 'white', fontWeight: 'bold' };
 
         const api = (uri, body, callback) => {
@@ -278,20 +277,23 @@
         }
 
         const refreshData = () => api('/portfolio', null, (response) => {
-            setUsData(sort(response.filter(i => !i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
-            setSgData(sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage', false));
+            const us = sort(response.filter(i => i.symbol.indexOf(':') > -1 && !i.symbol.endsWith(':xses')), 'changeTodayPercentage', false);
+            const sg = sort(response.filter(i => i.symbol.endsWith(':xses')), 'changeTodayPercentage', false);
+            const crypto = sort(response.filter(i => i.symbol.indexOf(':') === -1), 'changeTodayPercentage', false);
+            setData({ us, sg, crypto });
         });
 
         React.useEffect(refreshData, []);
 
         return (
             <ThemeProvider theme={darkTheme}>
-                { !(usData && sgData) ? (<div className="loading"></div>) : (
+                { !data ? (<div className="loading"></div>) : (
                     <Container>
                         <CssBaseline />
                         <Box sx={{ my: 4 }}>
-                            { sgData ? <PortTable label="SG" data={sgData} setData={setSgData} /> : '' }
-                            { usData ? <PortTable label="US" data={usData} setData={setUsData} /> : '' }
+                            { data.sg.length > 0 ? <PortTable label="SG" data={data.sg} /> : '' }
+                            { data.us.length > 0 ? <PortTable label="US" data={data.us} /> : '' }
+                            { data.crypto.length > 0 ? <PortTable label="Crypto" data={data.crypto} /> : '' }
                         </Box>
                         <AddTransactionForm {...{ api, setSnackbar, refreshData }} />
                     </Container>

@@ -13,7 +13,7 @@ public class Position {
     private int id;
     @DBRef
     private Instrument instrument;
-    private int position;
+    private BigDecimal position;
     private BigDecimal buyPrice;
     private BigDecimal buyFees;
     private BigDecimal buyFx;

@@ -46,20 +46,31 @@ public class PriceService {
 
     @GetMapping("/prices")
     public List<Instrument> getPrices() {
-        List<Integer> instrumentIds = new ArrayList<>(positionRepo.findAll().stream().map(p -> p.getInstrument().getId()).toList());
-        instrumentIds.add(45);
-
-        AtomicInteger counter = new AtomicInteger();
-        Map<Integer, Instrument> instrumentMap = instrumentRepo.findAll().stream()
-            .collect(Collectors.toMap(Instrument::getId, i -> i));
-
-        counter.set(0);
+        AtomicInteger counter = new AtomicInteger(0);
         List<PriceEntry> prices = new ArrayList<>();
-        instrumentIds.stream().collect(groupingBy(x -> (counter.getAndIncrement()) / 50))
+        List<Position> positions = positionRepo.findAll();
+
+        // Get stock position prices
+        positions.stream()
+            .filter(p -> p.getInstrument().getAssetType() == AssetType.Stock)
+            .map(p -> p.getInstrument().getId())
+            .collect(groupingBy(x -> (counter.getAndIncrement()) / 50))
             .values()
             .forEach(batch -> prices.addAll(saxoClient.getPrices(AssetType.Stock, batch).getData()));
-        prices.addAll(saxoClient.getPrices(AssetType.FxSpot, List.of(45)).getData());
 
+        // Get FX position prices
+        List<Integer> fxPositionInstrumentIds = positions.stream()
+            .filter(p -> p.getInstrument().getAssetType() == AssetType.FxSpot)
+            .map(p -> p.getInstrument().getId())
+            .toList();
+        List<Integer> fxIds = new ArrayList<>();
+        fxIds.add(45); // USD/SGD
+        fxIds.addAll(fxPositionInstrumentIds);
+        prices.addAll(saxoClient.getPrices(AssetType.FxSpot, fxIds).getData());
+
+        // Update all instrument prices
+        Map<Integer, Instrument> instrumentMap = instrumentRepo.findAll().stream()
+            .collect(Collectors.toMap(Instrument::getId, i -> i));
         List<Instrument> instruments = prices.stream()
             .map(e -> {
                 BigDecimal price = e.getPriceInfoDetails().getLastTraded();
@@ -74,8 +85,8 @@ public class PriceService {
         return instruments;
     }
 
-    private BigDecimal calculateAmount(BigDecimal price, int quantity, BigDecimal fees, BigDecimal fx) {
-        return price.multiply(BigDecimal.valueOf(quantity)).add(fees).multiply(fx);
+    private BigDecimal calculateAmount(BigDecimal price, BigDecimal quantity, BigDecimal fees, BigDecimal fx) {
+        return price.multiply(quantity).add(fees).multiply(fx);
     }
 
     private PortfolioEntry buildPortfolioEntry(Position position, Instrument instrument, BigDecimal fx) {
@@ -83,7 +94,7 @@ public class PriceService {
         BigDecimal sellAmount = calculateAmount(instrument.getPrice(), position.getPosition(), position.getBuyFees(), fx);
         BigDecimal profit = sellAmount.subtract(buyAmount).add(position.getDividends().multiply(fx).setScale(2, RoundingMode.HALF_UP));
         BigDecimal profitPercentage = profit.multiply(BigDecimal.valueOf(100)).divide(buyAmount, 2, RoundingMode.HALF_UP);
-        BigDecimal changeToday = instrument.getChange().multiply(BigDecimal.valueOf(position.getPosition())).multiply(fx);
+        BigDecimal changeToday = instrument.getChange().multiply(position.getPosition()).multiply(fx);
 
         return PortfolioEntry.builder()
             .symbol(instrument.getSymbol())

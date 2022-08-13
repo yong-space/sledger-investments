@@ -93,11 +93,12 @@ public class TransactionService {
         Instrument instrument = instrumentRepo.findById(instrumentId).orElse(null);
         if (instrument == null) {
             RawInstrument rawInstrument = saxoClient.searchInstruments(List.of(instrumentId)).Data().get(0);
-            PriceEntry priceEntry = saxoClient.getPrices(AssetType.Stock, List.of(instrumentId)).getData().get(0);
+            PriceEntry priceEntry = saxoClient.getPrices(AssetType.valueOf(rawInstrument.AssetType()), List.of(instrumentId)).getData().get(0);
             BigDecimal price = priceEntry.getPriceInfoDetails().getLastTraded();
             price = price.compareTo(BigDecimal.ZERO) > 0 ? price : priceEntry.getQuote().getAsk();
             instrument = Instrument.builder()
                 .id(instrumentId)
+                .assetType(AssetType.valueOf(rawInstrument.AssetType()))
                 .name(rawInstrument.Description())
                 .symbol(rawInstrument.Symbol())
                 .currency(rawInstrument.CurrencyCode())
@@ -133,7 +134,7 @@ public class TransactionService {
         String instrument,
         String ticker,
         BigDecimal price,
-        int quantity,
+        BigDecimal quantity,
         BigDecimal notional
     ) {}
 }

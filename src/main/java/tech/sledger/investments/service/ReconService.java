@@ -3,6 +3,8 @@ package tech.sledger.investments.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.investments.model.Instrument;
 import tech.sledger.investments.model.Position;
 import tech.sledger.investments.model.Transaction;
@@ -18,14 +20,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
+@RestController
 @RequiredArgsConstructor
 public class ReconService {
     private final TransactionRepo transactionRepo;
     private final PositionRepo positionRepo;
     private final InstrumentRepo instrumentRepo;
 
-    public void reconcilePositions() {
+    @GetMapping("/recon")
+    public String reconcilePositions() {
         log.info("Reconciling positions");
         positionRepo.deleteAll();
 
@@ -38,12 +41,12 @@ public class ReconService {
         int index = 1;
         for (int instrumentId : transactions.keySet()) {
             List<Transaction> thisTransactions = transactions.get(instrumentId);
-            int positionSum = thisTransactions.stream()
+            BigDecimal positionSum = thisTransactions.stream()
                 .filter(t -> t.getType() == TransactionType.Trade)
                 .map(Transaction::getQuantity)
-                .reduce(0, Integer::sum);
-            if (positionSum > 0) {
-                int latestPosition = 0;
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (positionSum.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal latestPosition = BigDecimal.ZERO;
                 BigDecimal totalPrice = BigDecimal.ZERO;
                 BigDecimal totalAmount = BigDecimal.ZERO;
                 BigDecimal totalAmountLocal = BigDecimal.ZERO;
@@ -53,8 +56,8 @@ public class ReconService {
                 for (Transaction t : thisTransactions) {
                     switch (t.getType()) {
                         case Trade -> {
-                            latestPosition += t.getQuantity();
-                            if (latestPosition == 0) {
+                            latestPosition = latestPosition.add(t.getQuantity());
+                            if (latestPosition.equals(BigDecimal.ZERO)) {
                                 totalPrice = BigDecimal.ZERO;
                                 totalAmount = BigDecimal.ZERO;
                                 totalAmountLocal = BigDecimal.ZERO;
@@ -64,7 +67,7 @@ public class ReconService {
                                 totalAmount = totalAmount.add(t.getAmount());
                                 totalAmountLocal = totalAmountLocal.add(t.getAmount().multiply(t.getFxRate()));
                                 totalPrice = totalPrice.add(t.getPrice());
-                                totalNotionalAmount = totalNotionalAmount.add(t.getPrice().multiply(BigDecimal.valueOf(t.getQuantity())));
+                                totalNotionalAmount = totalNotionalAmount.add(t.getPrice().multiply(t.getQuantity()));
                             }
                         }
                         case Dividends -> {
@@ -77,7 +80,7 @@ public class ReconService {
                     .id(index++)
                     .instrument(instruments.get(instrumentId))
                     .position(positionSum)
-                    .buyPrice(totalAmount.divide(BigDecimal.valueOf(latestPosition), RoundingMode.HALF_EVEN).abs())
+                    .buyPrice(totalAmount.divide(latestPosition, RoundingMode.HALF_EVEN).abs())
                     .buyFees(totalAmount.abs().subtract(totalNotionalAmount))
                     .dividends(dividends)
                     .buyFx(totalAmountLocal.divide(totalAmount, RoundingMode.HALF_EVEN))
@@ -86,6 +89,6 @@ public class ReconService {
             }
         }
         positionRepo.saveAll(positions);
-        log.info("Done");
+        return "Done";
     }
 }

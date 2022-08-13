@@ -16,7 +16,7 @@ public class Transaction {
     private BigDecimal amount;
     private BigDecimal price;
     private String ticker;
-    private Integer quantity;
+    private BigDecimal quantity;
     private Integer instrumentId;
     private BigDecimal fxRate;
 }

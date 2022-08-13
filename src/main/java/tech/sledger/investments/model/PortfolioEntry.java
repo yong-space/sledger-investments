@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 public class PortfolioEntry {
     private String symbol;
     private String name;
-    private int position;
+    private BigDecimal position;
     private BigDecimal amount;
     private BigDecimal price;
     private BigDecimal dividends;

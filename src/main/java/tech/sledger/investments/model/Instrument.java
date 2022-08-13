@@ -3,6 +3,7 @@ package tech.sledger.investments.model;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import tech.sledger.investments.model.saxo.AssetType;
 import java.math.BigDecimal;
 
 @Data
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 public class Instrument {
     @Id
     private int id;
+    private AssetType assetType;
     private String name;
     private String symbol;
     private String currency;
