@@ -12,4 +12,5 @@ public interface TransactionRepo extends MongoRepository<Transaction, Integer> {
     Transaction findFirstByTypeAndDateGreaterThanAndPriceIsNotNullOrderByDate(TransactionType type, Instant date);
     List<Transaction> findAllByInstrumentIdIsNotNullOrderByDate();
     List<Transaction> findAllByTypeOrderByDate(TransactionType type);
+    List<Transaction> findAllByInstrumentIdOrderByDate(Integer instrumentId);
 }
