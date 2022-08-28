@@ -126,7 +126,7 @@ public class TransactionService {
                         w = new WorkingPosition();
                     } else {
                         w.setTotalAmount(w.getTotalAmount().add(t.getAmount()));
-                        w.setTotalAmountLocal(w.getTotalNotionalAmount().add(t.getAmount().multiply(t.getFxRate())));
+                        w.setTotalAmountLocal(w.getTotalAmountLocal().add(t.getAmount().multiply(t.getFxRate())));
                         w.setTotalPrice(w.getTotalPrice().add(t.getPrice()));
                         w.setTotalNotionalAmount(w.getTotalNotionalAmount().add(t.getPrice().multiply(t.getQuantity())));
                     }
