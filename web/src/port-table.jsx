@@ -21,6 +21,11 @@ const fields = [
     { field: 'profitPercentage', label: "P&L %", sortable: true, colour: true, decimals: 1 },
 ];
 
+const sort = (data, sortField, sortAsc) => {
+    data.sort((a, b) => a[sortField] > b[sortField] ? (sortAsc ? 1 : -1) : (sortAsc ? -1 : 1));
+    return data;
+};
+
 const PortTable = ({ label, data }) => {
     const [ viewData, setViewData ] = useState(data);
     const [ sortField, setSortField ] = useState('changeTodayPercentage');
