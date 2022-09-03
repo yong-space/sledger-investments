@@ -13,3 +13,8 @@ build/
 
 ### Spring ###
 application-*.yml
+
+### Web ###
+**/node_modules
+**/dist
+**/static

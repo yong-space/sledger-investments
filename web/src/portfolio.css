@@ -1,0 +1,10 @@
+html, body, #root { height: 100%; margin: 0 }
+#root { background: #121212 }
+table, th, td { border: #555 1px solid }
+th, td { padding: .5rem }
+td.green { color: lightgreen }
+td.red { color: palevioletred }
+th { user-select: none }
+th.select { cursor: pointer }
+input { color-scheme: dark }
+.loading { filter: invert(.5); position: relative; top: 50% }

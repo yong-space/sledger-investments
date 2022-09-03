@@ -14,6 +14,7 @@ import org.springframework.http.client.support.BasicAuthenticationInterceptor;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,12 +26,12 @@ import tech.sledger.investments.repository.ConfigRepo;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
 @Slf4j
 @Lazy(false)
+@CrossOrigin
 @RestController
 @RequiredArgsConstructor
 public class TokenService {
