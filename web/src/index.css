@@ -1,5 +1,4 @@
-html, body, #root { height: 100%; margin: 0 }
-#root { background: #121212 }
+
 table, th, td { border: #555 1px solid }
 th, td { padding: .5rem }
 td.green { color: lightgreen }
