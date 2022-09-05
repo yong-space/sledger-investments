@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Container from "@mui/material/Container";
 import Toolbar from "@mui/material/Toolbar";
@@ -10,7 +11,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 
-const pages = ["Portfolio", "Transactions"];
+const pages = [
+  { label: 'Portfolio', link: '/' },
+  { label: 'Transactions', link: 'tx' },
+];
 
 const Brand = ({ mobile }) => (
   <Typography
@@ -29,7 +33,7 @@ const Brand = ({ mobile }) => (
 );
 
 const MobileMenu = () => {
-  const [anchor, setAnchor] = useState(null);
+  const [ anchor, setAnchor ] = useState(null);
 
   return (
     <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -43,9 +47,9 @@ const MobileMenu = () => {
         onClose={() => setAnchor(null)}
         sx={{ display: { xs: "block", md: "none" } }}
       >
-        {pages.map((page) => (
-          <MenuItem key={page} onClick={() => setAnchor(null)}>
-            <Typography>{page}</Typography>
+        {pages.map(({ label, link}) => (
+          <MenuItem key={link} component={Link} to={link}>
+            <Typography>{label}</Typography>
           </MenuItem>
         ))}
       </Menu>
@@ -55,16 +59,16 @@ const MobileMenu = () => {
 
 const DesktopMenu = () => (
   <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-    {pages.map((page) => (
-      <Button key={page} sx={{ color: "white" }}>
-        {page}
+    {pages.map(({ label, link}) => (
+      <Button key={link} component={Link} to={link} sx={{ color: "white" }}>
+        {label}
       </Button>
     ))}
   </Box>
 );
 
 const NavBar = () => (
-  <AppBar position="static">
+  <AppBar position="fixed">
     <Container maxWidth="xl">
       <Toolbar disableGutters>
         <Brand mobile={false} />

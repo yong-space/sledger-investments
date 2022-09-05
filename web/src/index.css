@@ -1,4 +1,5 @@
-
+html, body, #root { height: 100% }
+#root > header + * { padding-top: 5rem; height: 100% }
 table, th, td { border: #555 1px solid }
 th, td { padding: .5rem }
 td.green { color: lightgreen }
