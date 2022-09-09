@@ -41,7 +41,7 @@ const Api = () => {
     searchInstrument: (value, callback) => apiCall(`/search?query=${value.trim()}`, null, callback),
     getPortfolio: (callback) => apiCall('/portfolio', null, callback),
     addTx: (value, callback) => apiCall('/add-tx', value, callback),
-    listTx: (value, callback) => apiCall('/tx', null, callback),
+    listTx: (callback) => apiCall('/tx', null, callback),
   };
 };
 export default Api;

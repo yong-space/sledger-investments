@@ -1,13 +1,33 @@
-import Typography from '@mui/material/Typography';
+import { useState, useEffect } from 'react';
 import AddTransactionForm from './add-tx-form';
-import TransactionsGrid from './transactions-grid';
+import DataGrid from './datagrid';
+import Api from './api';
+import Loader from './Loader';
+
+const fields = [
+    { field: "id", label: "ID", sortable: true },
+    { field: "date", label: "Date", sortable: true, date: true },
+    { field: "type", label: "Type", sortable: true },
+    { field: "ticker", label: "Ticker", sortable: true },
+    { field: "price", label: "Price", sortable: true, decimals: 3 },
+    { field: "amount", label: "Amount", sortable: true, colour: true, decimals: 2 },
+    { field: "quantity", label: "Quantity", sortable: true, colour: true, decimals: 0 },
+];
 
 const Transactions = () => {
+    const { listTx } = Api();
+    const [ data, setData ] = useState();
+
+    useEffect(() => listTx((response) => setData(response)), []);
+
     return (
-        <>
-            <Typography variant="h5">Transactions</Typography>
-            <TransactionsGrid />
+        !data ? <Loader /> : <>
             <AddTransactionForm />
+            <DataGrid
+                label="Transactions"
+                defaultSortField="date"
+                {...{ data, fields }}
+            />
         </>
     );
 };

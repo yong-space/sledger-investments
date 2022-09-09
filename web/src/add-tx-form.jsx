@@ -53,7 +53,7 @@ const AddTransactionForm = () => {
 
     return (
         <form onSubmit={addTrade}>
-            <Box sx={{ display: 'inline-flex', width: '30rem', maxWidth: '100%', flexDirection: "column", gap: '1rem', my: 4 }}>
+            <Box sx={{ display: 'inline-flex', width: '30rem', maxWidth: '100%', flexDirection: "column", gap: '1rem', mb: 4 }}>
                 <Typography variant="h5">Add Transaction</Typography>
                 <TextField select name="type" size="small" label="Transaction Type" value={txType} onChange={(e) => setTxType(e.target.value)}>
                     <MenuItem value="Trade">Trade</MenuItem>

@@ -9,6 +9,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Util from "./util";
+import dayjs from 'dayjs';
 
 const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
   const [ viewData, setViewData ] = useState(data);
@@ -48,10 +49,15 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
     return parts[1] && decimals > 0 ? `${whole}.${parts[1]}` : whole;
   };
 
-  const DataTableCell = ({ value, decimals, colour }) => {
+  const DataTableCell = ({ value, decimals, colour, date }) => {
     const decimalsDefined = parseInt(decimals) % 1 === 0;
-    const formatted =
-      !decimalsDefined || !value ? value : formatNumber(value, decimals);
+    let formatted = value;
+    if (value && decimalsDefined) {
+      formatted = formatNumber(value, decimals);
+    } else if (date) {
+      formatted = dayjs(value).format('YYYY-MM-DD')
+    }
+
     return (
       <TableCell
         align={decimalsDefined ? "right" : "left"}
@@ -82,8 +88,8 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {viewData.map((row) => (
-              <TableRow key={row.symbol}>
+            {viewData.map((row, index) => (
+              <TableRow key={index}>
                 {fields.map((field) => (
                   <DataTableCell
                     key={field.field}
