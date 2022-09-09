@@ -9,7 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import InstrumentPicker from './instrument-picker';
 import Api from './api';
 
-const AddTransactionForm = ({ refreshData }) => {
+const AddTransactionForm = () => {
     const [ , setStatus ] = useRecoilState(atoms.status);
     const [ txType, setTxType ] = useState('Trade');
     const [ instrument, setInstrument ] = useState();
@@ -31,7 +31,6 @@ const AddTransactionForm = ({ refreshData }) => {
             setStatus({ open: true, error: false, msg: 'Trade Added' });
             setInstrument(null);
             e.target.reset();
-            refreshData();
         });
     };
     const inputProps = { step: 'any' };
