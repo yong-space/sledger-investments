@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class PriceService {
     private final SaxoClient saxoClient;
     private final PositionRepo positionRepo;
-    private final InstrumentRepo instrumentRepo;
+    private final InstrumentService instrumentService;
 
     @GetMapping("/search")
     public SearchResults searchInstruments(
@@ -71,19 +71,21 @@ public class PriceService {
         prices.addAll(saxoClient.getPrices(AssetType.FxSpot, fxIds).getData());
 
         // Update all instrument prices
-        Map<Integer, Instrument> instrumentMap = instrumentRepo.findAll().stream()
-            .collect(Collectors.toMap(Instrument::getId, i -> i));
+        Map<Integer, Instrument> instrumentMap = instrumentService.getInstrumentMap();
         List<Instrument> instruments = prices.stream()
             .map(e -> {
                 BigDecimal price = e.getPriceInfoDetails().getLastTraded();
                 price = price.compareTo(BigDecimal.ZERO) > 0 ? price : e.getQuote().getAsk();
                 Instrument instrument = instrumentMap.get(e.getIdentifier());
+                if (instrument == null) {
+                    instrument = instrumentService.getInstrument(e.getIdentifier());
+                }
                 instrument.setPrice(price);
                 instrument.setChange(e.getPriceInfo().getNetChange());
                 instrument.setChangePercent(e.getPriceInfo().getPercentChange());
                 return instrument;
             }).toList();
-        instrumentRepo.saveAll(instruments);
+        instrumentService.saveAll(instruments);
         return instruments;
     }
 

@@ -24,6 +24,10 @@ jobs:
     - uses: gradle/gradle-build-action@v2
     - run: ./gradlew build
 
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
     - run: |
         export TIMESTAMP=`date +'%Y%m%d%H%M'`
         echo "IMAGE_NAME=${{ SECRETS.DOCKER_REGISTRY }}/${{ SECRETS.DEPLOYMENT_NAME }}:$TIMESTAMP" >> $GITHUB_ENV

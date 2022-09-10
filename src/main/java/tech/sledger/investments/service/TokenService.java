@@ -113,7 +113,7 @@ public class TokenService {
         try {
             response = restTemplate.postForObject(saxoAuthUri + "/token", new HttpEntity<>(data, headers), String.class);
         } catch (RestClientException e) {
-            log.error("Unable to fetch new token", e);
+            log.error("Unable to fetch new token: {}", e.getMessage());
             return;
         }
 

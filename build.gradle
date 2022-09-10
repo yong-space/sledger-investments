@@ -1,27 +1,52 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.0'
-    id 'io.spring.dependency-management' version '1.0.12.RELEASE'
-    id 'io.freefair.lombok' version '6.5.0.3'
+    id 'org.springframework.boot' version '2.7.3'
+    id 'io.spring.dependency-management' version '1.0.13.RELEASE'
+    id 'io.freefair.lombok' version '6.5.1'
     id 'java'
+    id 'jacoco'
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 group = 'tech.sledger'
 version = '0.2'
-sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-    implementation 'org.springframework.boot:spring-boot-starter-cache'
-    implementation 'com.github.ben-manes.caffeine:caffeine'
-    implementation 'org.springframework.retry:spring-retry:1.3.3'
-    implementation 'org.springframework:spring-aspects:5.3.22'
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
+    implementation "org.springframework.boot:spring-boot-starter-cache"
+    implementation "com.github.ben-manes.caffeine:caffeine"
+    implementation "org.springframework.retry:spring-retry:1.3.3"
+    implementation "org.springframework:spring-aspects:5.3.22"
+
+    def testContainersVersion = '1.17.3'
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
+    testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+    testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 }
 
-tasks.named("jar") {
-    enabled = false
+tasks.named("jar") {enabled = false }
+
+tasks.withType(Test) { useJUnitPlatform() }
+test {
+    finalizedBy jacocoTestReport
+    jacoco { excludes = [ 'tech.sledger.investments.model.*' ] }
+}
+jacocoTestReport {
+    dependsOn test
+    afterEvaluate {
+        getClassDirectories().setFrom(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [ '**/tech/sledger/investments/model/**' ])
+        })
+    }
+    reports { xml.enabled true }
 }
