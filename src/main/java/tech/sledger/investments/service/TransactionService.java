@@ -3,7 +3,6 @@ package tech.sledger.investments.service;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.model.*;
@@ -20,7 +19,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static tech.sledger.investments.model.TransactionType.*;
 
 @Slf4j
-@CrossOrigin
 @RestController
 @RequiredArgsConstructor
 public class TransactionService {
@@ -33,6 +31,7 @@ public class TransactionService {
         String status = "ok";
     }
 
+    @CrossOrigin
     @GetMapping("/tx")
     public List<Transaction> listTransactions() {
         return txRepo.findAllByOrderByDateDesc();
@@ -43,6 +42,7 @@ public class TransactionService {
         return txRepo.findById(id).orElseThrow(() -> new ResponseStatusException(NOT_FOUND));
     }
 
+    @CrossOrigin
     @DeleteMapping("/tx/{id}")
     public Response deleteTx(@PathVariable int id) {
         Transaction tx = txRepo.findById(id).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "No such transaction"));
@@ -69,6 +69,7 @@ public class TransactionService {
         return new Response();
     }
 
+    @CrossOrigin
     @PostMapping("/tx")
     public Transaction addTrade(@RequestBody NewTransaction newTx) {
         int instrumentId = 0;

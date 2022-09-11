@@ -11,6 +11,7 @@
   "dependencies": {
     "@fontsource/roboto": "^4.5.8",
     "@mui/icons-material": "^5.10.3",
+    "@mui/lab": "^5.0.0-alpha.98",
     "@mui/material": "^5.10.3",
     "@mui/styled-engine": "npm:@mui/styled-engine-sc@latest",
     "dayjs": "^1.11.5",

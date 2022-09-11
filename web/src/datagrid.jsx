@@ -1,17 +1,18 @@
-import { useState } from "react";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import Util from "./util";
+import { useState } from 'react';
 import dayjs from 'dayjs';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import Util from './util';
+import DeleteButton from './delete-button';
 
-const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
+const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) => {
   const [ viewData, setViewData ] = useState(data);
   const [ sortField, setSortField ] = useState(defaultSortField);
   const [ sortAsc, setSortAsc ] = useState(false);
@@ -28,12 +29,13 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
     setViewData(sort([...data], newSortField, order));
   };
 
-  const HeaderTableCell = ({ field, label, sortable }) => {
+  const HeaderTableCell = ({ field, label, sortable, type }) => {
     return (
       <TableCell
         key={field}
         onClick={() => sortable && sortData(field)}
         className={sortable ? "select" : ""}
+        sx={{ width: type ? '7rem' : 'auto' }}
       >
         {label}
         {sortField === field && (
@@ -49,7 +51,17 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
     return parts[1] && decimals > 0 ? `${whole}.${parts[1]}` : whole;
   };
 
-  const DataTableCell = ({ value, decimals, colour, date }) => {
+  const renderValue = (type, formatted, row) => {
+      if (!type) {
+        return formatted;
+      }
+      const renderMap = {
+        deleteButton: <DeleteButton id={row.id} setData={setData} />,
+      }
+      return renderMap[type] || formatted;
+  };
+
+  const DataTableCell = ({ row, value, decimals, colour, date, type }) => {
     const decimalsDefined = parseInt(decimals) % 1 === 0;
     let formatted = value;
     if (value && decimalsDefined) {
@@ -63,7 +75,7 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
         align={decimalsDefined ? "right" : "left"}
         className={colour ? (value > 0 ? "green" : value < 0 ? "red" : "") : ""}
       >
-        {formatted}
+        { renderValue(type, formatted, row) }
       </TableCell>
     );
   };
@@ -94,6 +106,7 @@ const DataGrid = ({ label, data, fields, summary, defaultSortField }) => {
                   <DataTableCell
                     key={field.field}
                     value={row[field.field]}
+                    row={row}
                     {...field}
                   />
                 ))}

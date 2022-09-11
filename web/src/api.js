@@ -1,16 +1,20 @@
 import { useRecoilState } from 'recoil';
 import { atoms } from './atoms';
 
+const GET = 'GET';
+const POST = 'POST';
+const DELETE = 'DELETE';
+
 const Api = () => {
   const baseUri = window.location.hostname === "localhost" ? "http://localhost:8080" : "";
   const [ , setStatus ] = useRecoilState(atoms.status);
 
-  const apiCall = (uri, body, callback) => {
-    const config = body && {
-      method: "post",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    };
+  const apiCall = (method, uri, body, callback) => {
+    const config = { method };
+    if (body) {
+      config.body = JSON.stringify(body);
+      config.headers = { "Content-Type": "application/json" };
+    }
 
     const filter = async (response) => {
       if (response.ok) {
@@ -38,10 +42,11 @@ const Api = () => {
   };
 
   return {
-    searchInstrument: (value, callback) => apiCall(`/search?query=${value.trim()}`, null, callback),
-    getPortfolio: (callback) => apiCall('/portfolio', null, callback),
-    addTx: (value, callback) => apiCall('/add-tx', value, callback),
-    listTx: (callback) => apiCall('/tx', null, callback),
+    searchInstrument: (value, callback) => apiCall(GET, `/search?query=${value.trim()}`, null, callback),
+    getPortfolio: (callback) => apiCall(GET, '/portfolio', null, callback),
+    addTx: (value, callback) => apiCall(POST, '/tx', value, callback),
+    listTx: (callback) => apiCall(GET, '/tx', null, callback),
+    deleteTx: (value, callback) => apiCall(DELETE, `/tx/${value}`, null, callback),
   };
 };
 export default Api;

@@ -13,7 +13,6 @@ import tech.sledger.investments.model.Position;
 import tech.sledger.investments.model.saxo.AssetType;
 import tech.sledger.investments.model.saxo.PriceEntry;
 import tech.sledger.investments.model.saxo.SearchResults;
-import tech.sledger.investments.repository.InstrumentRepo;
 import tech.sledger.investments.repository.PositionRepo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -26,7 +25,6 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
-@CrossOrigin
 @RestController
 @RequiredArgsConstructor
 public class PriceService {
@@ -34,6 +32,7 @@ public class PriceService {
     private final PositionRepo positionRepo;
     private final InstrumentService instrumentService;
 
+    @CrossOrigin
     @GetMapping("/search")
     public SearchResults searchInstruments(
         @RequestParam(required=false) String query,
@@ -46,6 +45,7 @@ public class PriceService {
         return saxoClient.searchInstruments(query);
     }
 
+    @CrossOrigin
     @GetMapping("/prices")
     public List<Instrument> getPrices() {
         AtomicInteger counter = new AtomicInteger(0);
@@ -114,6 +114,7 @@ public class PriceService {
             .build();
     }
 
+    @CrossOrigin
     @GetMapping("/portfolio")
     public List<PortfolioEntry> getPortfolio() {
         Map<Integer, Instrument> prices = getPrices().stream()
