@@ -48,7 +48,7 @@ const MobileMenu = () => {
         sx={{ display: { xs: "block", md: "none" } }}
       >
         {pages.map(({ label, link}) => (
-          <MenuItem key={link} component={Link} to={link}>
+          <MenuItem key={link} component={Link} to={link} onClick={() => setAnchor(null)}>
             <Typography>{label}</Typography>
           </MenuItem>
         ))}
