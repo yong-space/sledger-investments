@@ -7,7 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Container from '@mui/material/Container';
 import StatusBar from './statusbar.jsx';
 import NavBar from './nav-bar';
-import Loader from './Loader';
+import Loader from './loader';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';

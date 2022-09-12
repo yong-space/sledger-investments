@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AddTransactionForm from './add-tx-form';
 import DataGrid from './datagrid';
 import Api from './api';
-import Loader from './Loader';
+import Loader from './loader';
 
 const fields = [
     { field: "id", label: "ID", sortable: true },

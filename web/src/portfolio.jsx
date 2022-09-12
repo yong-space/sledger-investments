@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
-import Loader from "./Loader";
+import Loader from "./loader";
 import DataGrid from "./datagrid";
 import Api from "./api";
 import Util from "./util";
