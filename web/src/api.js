@@ -42,11 +42,11 @@ const Api = () => {
   };
 
   return {
-    searchInstrument: (value, callback) => apiCall(GET, `/search?query=${value.trim()}`, null, callback),
-    getPortfolio: (callback) => apiCall(GET, '/portfolio', null, callback),
-    addTx: (value, callback) => apiCall(POST, '/tx', value, callback),
-    listTx: (callback) => apiCall(GET, '/tx', null, callback),
-    deleteTx: (value, callback) => apiCall(DELETE, `/tx/${value}`, null, callback),
+    searchInstrument: (value, callback) => apiCall(GET, `/api/search?query=${value.trim()}`, null, callback),
+    getPortfolio: (callback) => apiCall(GET, '/api/portfolio', null, callback),
+    addTx: (value, callback) => apiCall(POST, '/api/tx', value, callback),
+    listTx: (callback) => apiCall(GET, '/api/tx', null, callback),
+    deleteTx: (value, callback) => apiCall(DELETE, `/api/tx/${value}`, null, callback),
   };
 };
 export default Api;

@@ -31,19 +31,19 @@ public class TokenTests {
 
     @Test
     public void authorize() throws Exception {
-        mvc.perform(get("/authorize"))
+        mvc.perform(get("/api/authorize"))
             .andExpect(status().is3xxRedirection());
     }
 
     @Test
     public void tokenWithError() throws Exception {
-        mvc.perform(get("/token?code=x&error=hello&error_description=again"))
+        mvc.perform(get("/api/token?code=x&error=hello&error_description=again"))
             .andDo(result -> assertEquals("hello: again", result.getResponse().getContentAsString()));
     }
 
     @Test
     public void tokenSuccess() throws Exception {
-        mvc.perform(get("/token?code=x"))
+        mvc.perform(get("/api/token?code=x"))
             .andExpect(status().is3xxRedirection());
     }
 }

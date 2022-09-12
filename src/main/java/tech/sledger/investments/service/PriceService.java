@@ -2,10 +2,7 @@ package tech.sledger.investments.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tech.sledger.investments.client.SaxoClient;
 import tech.sledger.investments.model.Instrument;
 import tech.sledger.investments.model.PortfolioEntry;
@@ -26,6 +23,7 @@ import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class PriceService {
     private final SaxoClient saxoClient;

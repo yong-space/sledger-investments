@@ -49,24 +49,24 @@ public class TransactionTests extends BaseTest {
 
     @Test
     public void listTx() throws Exception {
-        mvc.perform(get("/tx")).andExpect(status().isOk());
+        mvc.perform(get("/api/tx")).andExpect(status().isOk());
     }
 
     @Test
     public void getBadTx() throws Exception {
-        mvc.perform(get("/tx/5678")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/tx/5678")).andExpect(status().isNotFound());
     }
 
     @Test
     public void addTxNewInstrument() throws Exception {
-        String txString = mvc.perform(post("/tx")
+        String txString = mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String txId = JsonPath.parse(txString).read("$.id").toString();
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].symbol").value("xyz"))
@@ -81,13 +81,13 @@ public class TransactionTests extends BaseTest {
                 assertEquals(0, entry.getDividends().compareTo(BigDecimal.ZERO));
             });
 
-        mvc.perform(delete("/tx/" + txId))
+        mvc.perform(delete("/api/tx/" + txId))
             .andExpect(status().isOk());
     }
 
     @Test
     public void addDividendTxWithoutPosition() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(dividendTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
@@ -95,17 +95,17 @@ public class TransactionTests extends BaseTest {
 
     @Test
     public void addDividendTxWithPosition() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(dividendTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andDo(result -> {
@@ -121,17 +121,17 @@ public class TransactionTests extends BaseTest {
 
     @Test
     public void addTxClosePosition() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(closeTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
 
@@ -141,17 +141,17 @@ public class TransactionTests extends BaseTest {
 
     @Test
     public void addTxExistingInstrument() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].symbol").value("xyz"))
@@ -182,17 +182,17 @@ public class TransactionTests extends BaseTest {
             BigDecimal.valueOf(105)
         );
 
-        String txString = mvc.perform(post("/tx")
+        String txString = mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(interestTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String txId = JsonPath.parse(txString).read("$.id").toString();
 
-        mvc.perform(get("/tx/" + txId))
+        mvc.perform(get("/api/tx/" + txId))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/tx/" + txId))
+        mvc.perform(delete("/api/tx/" + txId))
             .andExpect(status().isOk());
     }
 
@@ -208,17 +208,17 @@ public class TransactionTests extends BaseTest {
             BigDecimal.valueOf(105)
         );
 
-        String txString = mvc.perform(post("/tx")
+        String txString = mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(depositTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String txId = JsonPath.parse(txString).read("$.id").toString();
 
-        mvc.perform(get("/tx/" + txId))
+        mvc.perform(get("/api/tx/" + txId))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/tx/" + txId))
+        mvc.perform(delete("/api/tx/" + txId))
             .andExpect(status().isOk());
     }
 
@@ -234,57 +234,57 @@ public class TransactionTests extends BaseTest {
             BigDecimal.valueOf(105)
         );
 
-        String txString = mvc.perform(post("/tx")
+        String txString = mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(feesTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String txId = JsonPath.parse(txString).read("$.id").toString();
 
-        mvc.perform(get("/tx/" + txId))
+        mvc.perform(get("/api/tx/" + txId))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/tx/" + txId))
+        mvc.perform(delete("/api/tx/" + txId))
             .andExpect(status().isOk());
     }
 
     @Test
     public void deleteTxInvalid() throws Exception {
-        mvc.perform(delete("/tx/12345"))
+        mvc.perform(delete("/api/tx/12345"))
             .andExpect(status().isBadRequest());
     }
 
     @Test
     public void deleteTxClosePosition() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/tx/1"))
+        mvc.perform(delete("/api/tx/1"))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     public void deleteTxModifyPosition() throws Exception {
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
             .content(objectMapper.writeValueAsString(newTx))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(post("/tx")
+        mvc.perform(post("/api/tx")
                 .content(objectMapper.writeValueAsString(newTx))
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/tx/1"))
+        mvc.perform(delete("/api/tx/1"))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andDo(result -> {
@@ -334,10 +334,10 @@ public class TransactionTests extends BaseTest {
         txRepo.save(Transaction.builder().id(3).type(Trade).fxRate(one).price(one).amount(neg).date(today).instrumentId(1).quantity(one).build());
         txRepo.save(Transaction.builder().id(4).type(Deposit).fxRate(one).price(one).amount(neg).date(today).instrumentId(1).quantity(one).build());
 
-        mvc.perform(get("/recon"))
+        mvc.perform(get("/api/recon"))
             .andExpect(status().isOk());
 
-        mvc.perform(get("/portfolio"))
+        mvc.perform(get("/api/portfolio"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andDo(result -> {

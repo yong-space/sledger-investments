@@ -7,13 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class SaxoTests extends BaseTest {
     @Test
     public void searchByQuery() throws Exception {
-        mvc.perform(get("/search?query=x"))
+        mvc.perform(get("/api/search?query=x"))
             .andExpect(status().isOk());
     }
 
     @Test
     public void searchById() throws Exception {
-        mvc.perform(get("/search?id=1,2,3"))
+        mvc.perform(get("/api/search?id=1,2,3"))
             .andExpect(status().isOk());
     }
 }

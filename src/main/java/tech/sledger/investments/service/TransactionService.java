@@ -19,6 +19,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static tech.sledger.investments.model.TransactionType.*;
 
 @Slf4j
+@RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
 public class TransactionService {

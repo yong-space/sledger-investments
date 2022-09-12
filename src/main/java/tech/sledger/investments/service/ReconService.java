@@ -3,6 +3,7 @@ package tech.sledger.investments.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.investments.model.*;
 import tech.sledger.investments.repository.InstrumentRepo;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class ReconService {
     private final TransactionRepo txRepo;
