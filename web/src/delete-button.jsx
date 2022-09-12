@@ -11,7 +11,8 @@ const style = {
     transform: 'translate(-50%, -50%)',
     width: 400,
     bgcolor: 'background.paper',
-    border: '2px solid #000',
+    border: '1px solid #444',
+    borderRadius: '.4rem',
     boxShadow: 24,
     p: 4,
 };
@@ -46,7 +47,7 @@ const DeleteButton = ({ id, setData, promise }) => {
             >
                 <Box sx={style}>
                     Confirm delete? This change is permanent.
-                    <Box sx={{ display: 'flex', gap: '1rem', p: 1 }}>
+                    <Box sx={{ display: 'flex', gap: '1rem', mt: '2rem' }}>
                         <LoadingButton
                             variant="contained"
                             color="error"
