@@ -4,20 +4,20 @@ import DataGrid from './datagrid';
 import Api from './api';
 import Loader from './loader';
 
-const fields = [
-    { field: "id", label: "ID", sortable: true },
-    { field: "date", label: "Date", sortable: true, date: true },
-    { field: "type", label: "Type", sortable: true },
-    { field: "ticker", label: "Ticker", sortable: true },
-    { field: "quantity", label: "Quantity", sortable: true, colour: true, decimals: 0 },
-    { field: "price", label: "Price", sortable: true, decimals: 3 },
-    { field: "amount", label: "Amount", sortable: true, colour: true, decimals: 2 },
-    { field: "delete", label: "Delete", type: 'deleteButton' }
-];
-
 const Transactions = () => {
-    const { listTx } = Api();
+    const { listTx, deleteTx } = Api();
     const [ data, setData ] = useState();
+
+    const fields = [
+        { field: "id", label: "ID", sortable: true },
+        { field: "date", label: "Date", sortable: true, date: true },
+        { field: "type", label: "Type", sortable: true },
+        { field: "ticker", label: "Ticker", sortable: true },
+        { field: "quantity", label: "Quantity", sortable: true, colour: true, decimals: 0 },
+        { field: "price", label: "Price", sortable: true, decimals: 3 },
+        { field: "amount", label: "Amount", sortable: true, colour: true, decimals: 2 },
+        { field: "delete", label: "Delete", type: 'deleteButton', promise: deleteTx }
+    ];
 
     const refreshData = () => listTx((response) => setData(response));
     useEffect(refreshData, []);

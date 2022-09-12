@@ -3,7 +3,6 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
-import Api from './api';
 
 const style = {
     position: 'absolute',
@@ -17,17 +16,16 @@ const style = {
     p: 4,
 };
 
-const DeleteButton = ({ id, setData }) => {
+const DeleteButton = ({ id, setData, promise }) => {
     const [ modalOpen, setModalOpen ] = useState(false);
     const [ loading, setLoading ] = useState(false);
-    const { deleteTx } = Api();
 
     const confirmDelete = () => setModalOpen(true);
     const dismiss = () => setModalOpen(false);
 
     const performDelete = () => {
         setLoading(true);
-        deleteTx(id, () => {
+        promise(id, () => {
             dismiss();
             setData((data) => data.filter(d => d.id !== id));
         });

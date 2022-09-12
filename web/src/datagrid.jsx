@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -13,10 +13,14 @@ import Util from './util';
 import DeleteButton from './delete-button';
 
 const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) => {
-  const [ viewData, setViewData ] = useState(data);
+  const [ viewData, setViewData ] = useState();
   const [ sortField, setSortField ] = useState(defaultSortField);
   const [ sortAsc, setSortAsc ] = useState(false);
   const { sort } = Util();
+
+  useEffect(() => {
+    setViewData(data);
+  }, [ data ]);
 
   const sortData = (newSortField) => {
     let order = sortAsc;
@@ -51,17 +55,17 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
     return parts[1] && decimals > 0 ? `${whole}.${parts[1]}` : whole;
   };
 
-  const renderValue = (type, formatted, row) => {
+  const renderValue = (row, type, promise, formatted) => {
       if (!type) {
         return formatted;
       }
       const renderMap = {
-        deleteButton: <DeleteButton id={row.id} setData={setData} />,
+        deleteButton: <DeleteButton id={row.id} {...{ setData, promise }} />,
       }
       return renderMap[type] || formatted;
   };
 
-  const DataTableCell = ({ row, value, decimals, colour, date, type }) => {
+  const DataTableCell = ({ row, type, value, decimals, colour, date, promise }) => {
     const decimalsDefined = parseInt(decimals) % 1 === 0;
     let formatted = value;
     if (value && decimalsDefined) {
@@ -75,7 +79,7 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
         align={decimalsDefined ? "right" : "left"}
         className={colour ? (value > 0 ? "green" : value < 0 ? "red" : "") : ""}
       >
-        { renderValue(type, formatted, row) }
+        { renderValue(row, type, promise, formatted) }
       </TableCell>
     );
   };
@@ -100,7 +104,9 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
             </TableRow>
           </TableHead>
           <TableBody>
-            {viewData.map((row, index) => (
+            {!viewData ?
+              <TableRow><DataTableCell value="No Data" /></TableRow> :
+              viewData.map((row, index) => (
               <TableRow key={index}>
                 {fields.map((field) => (
                   <DataTableCell
