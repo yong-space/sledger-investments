@@ -8,8 +8,8 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import tech.sledger.investments.model.saxo.PriceResponse;
 import tech.sledger.investments.model.saxo.AssetType;
+import tech.sledger.investments.model.saxo.PriceResponse;
 import tech.sledger.investments.model.saxo.SearchResults;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,10 +21,6 @@ public class SaxoClient {
     private String saxoUri;
     private HttpHeaders headers = null;
     private final RestTemplate restTemplate = new RestTemplate();
-
-    public boolean isNotAuthenticated() {
-        return headers == null;
-    }
 
     public void setAccessToken(String accessToken) {
         headers = new HttpHeaders();
@@ -39,7 +35,7 @@ public class SaxoClient {
     }
 
     public SearchResults searchInstruments(String query) {
-        return get("/ref/v1/instruments/?AssetType=FxSpot&Keywords=" + query, SearchResults.class);
+        return get("/ref/v1/instruments/?AssetTypes=Stock,FxSpot&Keywords=" + query, SearchResults.class);
     }
 
     @Cacheable(value = "instruments", unless = "#result==null")
