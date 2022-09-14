@@ -41,7 +41,7 @@ public class SaxoClient {
     @Cacheable(value = "instruments", unless = "#result==null")
     public SearchResults searchInstruments(List<Integer> identifiers) {
         String idString = identifiers.toString().replaceAll(" ", "");
-        return get("/ref/v1/instruments/?Uics=" + idString.substring(1, idString.length() - 1), SearchResults.class);
+        return get("/ref/v1/instruments/?AssetTypes=Stock,FxSpot&Uics=" + idString.substring(1, idString.length() - 1), SearchResults.class);
     }
 
     @Retryable
