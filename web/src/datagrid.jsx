@@ -18,9 +18,7 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
   const [ sortAsc, setSortAsc ] = useState(false);
   const { sort } = Util();
 
-  useEffect(() => {
-    setViewData(data);
-  }, [ data ]);
+  useEffect(() => setViewData(data), [ data ]);
 
   const sortData = (newSortField) => {
     let order = sortAsc;
@@ -69,7 +67,8 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
     const decimalsDefined = parseInt(decimals) % 1 === 0;
     let formatted = value;
     if (value && decimalsDefined) {
-      formatted = formatNumber(value, decimals);
+      const decimalsOverride = (decimals === 0 && (row?.symbol || row?.ticker)?.indexOf(':') === -1) ? 5 : decimals;
+      formatted = formatNumber(value, decimalsOverride);
     } else if (date) {
       formatted = dayjs(value).format('YYYY-MM-DD')
     }
@@ -94,7 +93,7 @@ const DataGrid = ({ label, data, setData, fields, summary, defaultSortField }) =
   return (
     <>
       <Typography variant="h5">{label}</Typography>
-      <TableContainer component={Paper} sx={{ my: "1rem" }}>
+      <TableContainer component={Paper} sx={{ margin: ".5rem 0 2.5rem 0" }}>
         <Table size="small">
           <TableHead>
             <TableRow>
