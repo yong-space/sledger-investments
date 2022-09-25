@@ -27,7 +27,7 @@ const Api = () => {
     const error = (response) => {
       const { status, error, message } = response;
       if (message.indexOf("401 Unauthorized") === 0) {
-        window.location.href = baseUri + "/authorize";
+        window.location.href = baseUri + "/api/authorize";
         return;
       }
       setStatus({
