@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.investments.model.saxo.AssetType;
@@ -51,6 +52,13 @@ public class SaxoClient {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated yet");
         }
         HttpEntity<Object> request = new HttpEntity<>(headers);
-        return restTemplate.exchange(saxoUri + uri, HttpMethod.GET, request, responseType).getBody();
+        try {
+            return restTemplate.exchange(saxoUri + uri, HttpMethod.GET, request, responseType).getBody();
+        } catch (RestClientException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("401")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            }
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 }
