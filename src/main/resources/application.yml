@@ -19,3 +19,4 @@ saxo:
     app-key: x
     app-secret: x
     redirect-uri: http://localhost:8080/api/token
+    home-uri: /

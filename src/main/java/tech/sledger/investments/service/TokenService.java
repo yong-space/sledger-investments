@@ -43,6 +43,8 @@ public class TokenService {
     private String saxoClientSecret;
     @Value("${saxo.redirect-uri}")
     private String saxoRedirectUri;
+    @Value("${saxo.home-uri}")
+    private String homeUri;
     private final SaxoClient saxoClient;
     private final ObjectMapper objectMapper;
     private final Timer timer = new Timer(true);
@@ -83,7 +85,7 @@ public class TokenService {
         data.add("grant_type", "authorization_code");
         data.add("code", code);
         getNewToken(data);
-        response.sendRedirect("/");
+        response.sendRedirect(homeUri);
         return null;
     }
 
