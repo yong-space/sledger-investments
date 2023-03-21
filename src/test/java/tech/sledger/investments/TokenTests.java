@@ -1,5 +1,6 @@
 package tech.sledger.investments;
 
+import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -8,7 +9,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tech.sledger.investments.model.Config;
 import tech.sledger.investments.repository.ConfigRepo;
-import javax.annotation.PostConstruct;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,7 +43,7 @@ public class TokenTests {
 
     @Test
     public void tokenSuccess() throws Exception {
-        mvc.perform(get("/api/token?code=x"))
+        mvc.perform(get("/api/token?code=904dfd4b-ee58-4bd4-ba63-239bf6ed589b#/lst/1679407726745"))
             .andExpect(status().is3xxRedirection());
     }
 }

@@ -3,6 +3,8 @@ package tech.sledger.investments.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +25,6 @@ import org.springframework.web.client.RestTemplate;
 import tech.sledger.investments.client.SaxoClient;
 import tech.sledger.investments.model.Config;
 import tech.sledger.investments.repository.ConfigRepo;
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -81,9 +81,11 @@ public class TokenService {
         if (error != null) {
             return error + ": " + errorDescription;
         }
+        int hashIndex = code.indexOf('#');
+        String finalCode = hashIndex > -1 ? code.substring(0, hashIndex) : code;
         MultiValueMap<String, String> data = new LinkedMultiValueMap<>();
         data.add("grant_type", "authorization_code");
-        data.add("code", code);
+        data.add("code", finalCode);
         getNewToken(data);
         response.sendRedirect(homeUri);
         return null;

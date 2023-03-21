@@ -1,6 +1,7 @@
 package tech.sledger.investments;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +17,6 @@ import tech.sledger.investments.repository.InstrumentRepo;
 import tech.sledger.investments.repository.PositionRepo;
 import tech.sledger.investments.repository.TransactionRepo;
 import tech.sledger.investments.service.TransactionService;
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

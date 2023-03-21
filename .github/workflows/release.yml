@@ -1,15 +1,14 @@
-name: Release
+name: Build and Release
 
 on:
   push:
-    branches:
-      - release
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+      tag: ${{ steps.meta.outputs.tags }}
     steps:
     - uses: actions/checkout@v3
 
@@ -20,43 +19,63 @@ jobs:
         cache-dependency-path: web/yarn.lock
     - run: cd web && yarn && yarn build && cp -r dist ../src/main/resources/static/
 
-    - uses: actions/setup-java@v1
+    - uses: actions/setup-java@v3
       with:
+        distribution: corretto
         java-version: 17
-    - uses: gradle/gradle-build-action@v2
-    - run: ./gradlew build
 
-    - id: tag
-      run: |
-        export TIMESTAMP=`date +'%Y%m%d%H%M'`
-        echo "IMAGE_NAME=${{ SECRETS.DOCKER_REGISTRY }}/${{ SECRETS.DEPLOYMENT_NAME }}:$TIMESTAMP" >> $GITHUB_ENV
-        echo "::set-output name=tag::$TIMESTAMP"
+    - uses: gradle/gradle-build-action@v2
+      with:
+        arguments: build
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - uses: docker/metadata-action@v4
+      id: meta
+      with:
+        images: ghcr.io/${{ github.repository }}
+        flavor: latest=false
+        tags: type=sha
+
+    - uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
 
     - uses: docker/setup-buildx-action@v2
+      with:
+        platforms: linux/arm64
 
     - uses: docker/login-action@v2
       with:
-        registry: ${{ secrets.DOCKER_REGISTRY }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - uses: docker/setup-qemu-action@v2
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: docker/build-push-action@v3
       with:
         context: .
         platforms: linux/arm64
         push: true
-        tags: ${{ env.IMAGE_NAME }}
+        tags: ${{ steps.meta.outputs.tags }}
 
   release:
     needs: build
     runs-on: self-hosted
+    environment: 'Prod'
     env:
-      DEPLOYMENT: ${{ SECRETS.DEPLOYMENT_NAME }}
-      IMAGE_NAME: ${{ SECRETS.DOCKER_REGISTRY_INT }}/${{ SECRETS.DEPLOYMENT_NAME }}:${{ needs.build.outputs.tag }}
+      DEPLOYMENT: ${{ github.event.repository.name }}
     steps:
       - name: Perform rolling update
         run: |
-          kubectl set image deploy/${DEPLOYMENT} ${DEPLOYMENT}=${IMAGE_NAME}
-          kubectl rollout status deploy/${DEPLOYMENT}
+          kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.tag }}
+          kubectl rollout status deployment/${DEPLOYMENT}
+
+      - uses: smartsquaregmbh/delete-old-packages@v0.6.0
+        with:
+          keep: 2
+          type: container
+          names: ${{ env.DEPLOYMENT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          organization: ${{ github.event.organization.login }}
