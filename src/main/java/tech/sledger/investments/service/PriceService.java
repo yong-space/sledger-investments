@@ -92,7 +92,7 @@ public class PriceService {
     }
 
     private PortfolioEntry buildPortfolioEntry(Position position, Instrument instrument, BigDecimal fx) {
-        BigDecimal buyAmount = calculateAmount(position.getBuyPrice(), position.getPosition(), position.getBuyFees(), position.getBuyFx());
+        BigDecimal buyAmount = calculateAmount(position.getBuyPrice(), position.getPosition(), position.getBuyFees(), fx);
         BigDecimal sellAmount = calculateAmount(instrument.getPrice(), position.getPosition(), position.getBuyFees(), fx);
         BigDecimal profit = sellAmount.subtract(buyAmount).add(position.getDividends().multiply(fx).setScale(2, RoundingMode.HALF_UP));
         BigDecimal profitPercentage = profit.multiply(BigDecimal.valueOf(100)).divide(buyAmount, 2, RoundingMode.HALF_UP);
@@ -126,8 +126,7 @@ public class PriceService {
 
         return positionRepo.findAll().stream().map(p -> {
             Instrument instrument = prices.get(p.getInstrument().getId());
-            BigDecimal fx = fxRates.get(instrument.getCurrency());
-            return buildPortfolioEntry(p, instrument, fx);
+            return buildPortfolioEntry(p, instrument, BigDecimal.valueOf(1));
         }).toList();
     }
 }
